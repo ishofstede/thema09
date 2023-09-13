@@ -1,0 +1,62 @@
+---
+title: "thema09_logboek"
+author: "Isabella Hofstede"
+date: '2023-09-13'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## week 1
+
+# Context:
+This week a dataset will be chosen with the aim of creating a supervised ML model for classification. The choice was made to pick the a dataset on bird classification by bonestructure: https://www.kaggle.com/datasets/zhangjuefei/birds-bones-and-living-habits
+
+There are many kinds of birds. Some are good at flying, others can't fly but run fast. Some swim under water, others go wading in shallow pool. According to their living environments and living habits, birds are classified into different ecological groups. There are 8 ecological groups of birds:
+
+Swimming Birds
+Wading Birds
+Terrestrial Birds
+Raptors
+Scansorial Birds
+Singing Birds
+Cursorial Birds (not included in dataset)
+Marine Birds (not included in dataset)
+The first 6 groups are covered by this dataset.
+
+Apparently, birds belonging to different ecological groups have different appearances: flying birds have strong wings and wading birds have long legs. Their living habits are somewhat reflected in their bones' shapes. As data scientists we may think of examining the underlying relationship between sizes of bones and ecological groups , and recognizing birds' ecological groups by their bone structure.
+
+# Status of data
+The dataset is made up of bird skeletons from collections of the Natural History Museum of Los Angeles County (data provided by Dr. D. Liu of Beijing Museum of Natural History). The dataset is a 420x10 size continuous values unbalanced multi-class dataset. There are 420 birds contained in this dataset. Each bird is represented by 10 measurements (features):
+
+Length and Diameter of Humerus
+Length and Diameter of Ulna
+Length and Diameter of Femur
+Length and Diameter of Tibiotarsus
+Length and Diameter of Tarsometatarsus
+
+The class attribute is "type", referring to the ecological group. The bird skeletons belong to 21 orders, 153 genera, 245 species. Each bird has a label for its ecological group:
+
+SW: Swimming Birds
+W: Wading Birds
+T: Terrestrial Birds
+R: Raptors
+P: Scansorial Birds
+SO: Singing Birds
+
+Pictured below are the attributes with their range and distribution:
+```{r}
+bird_data <- read.table('bird.csv', sep=",", header = 1)
+summary(bird_data)
+```
+# Missing data
+
+# Variation and distributions 
+
+# Class distribution 
+
+# Correlation 
+
+# Research Question 
