@@ -9,7 +9,6 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-#libraries 
 ```{r}
 library(ggplot2)
 library(dplyr)
@@ -55,21 +54,66 @@ SO: Singing Birds
 
 Pictured below are the attributes with their range and distribution:
 ```{r}
+#load the data
 bird_data <- read.table('bird.csv', sep=",", header = 1)
 summary(bird_data)
 ```
 # Missing data
+The summary shows that there are missing values present. The significance of these entries must be checked. 
+ 
+```{r}
+#checking for NA values 
+missing_data <- sapply(bird_data, function(x) sum(is.na(x)))
+missing_data_id <- bird_data$id[apply(is.na(bird_data), 1, any)]
+missing_data
+missing_data_id
+```
+There are a total of 420 entries with 7 having missing values. The missing values are the measurements of certain bones but none of the main attribute data; "type", is missing. This means a choice must be made to discard the missing data or perform imputation, which means replacing the missing data with substitutions. However 7 out of 420 means the instances with missing values account for 2% of the dataset, so then they may just be insignificant enough to remove entirely. Let's also think about why the data is missing; is it significant to specific types of birds or is the data quite random?
 
-
-# Variation and distributions 
+```{r}
+#checking which types of birds have missing data
+missing_data_type <- bird_data$type[apply(is.na(bird_data), 1, any)]
+missing_data_type
+```
+Apparently there are multiple songbirds with "missing bones". These missing values are most likely field data that was not properly formatted into the csv file. We shall further investigate the data to see if removing the entries with mission values will have an impact on the usability of the dataset. 
 
 # Class distribution 
+We need to check whether or not the data is equally distributed between the types of birds. 
+```{r}
+#check the distribution of the bird types
+class_distribution <- table(bird_data$type)
+class_distribution
+```
+On a glance we can already see that the distribution follows a curve. A histogram will show the severity of the differences: 
+
+```{r}
+#create a histogram per species
+ggplot(bird_data, aes(x = type)) + geom_bar(fill = "black") + labs(title = "distribution of bird species", x = "species", y = "count")
+```
+
+Since the SO (songbirds) are over represented in the data, it seems fine to remove the entries with missing values. 
+
+# Variation and distributions 
+Boxplot:
+```{r}
+
+```
+
+Histogram:
+```{r}
+
+```
+
+
+
 
 # Correlation 
 
+
+
 # Research Question 
-Can a machine learning model accurately classify birds into ecological groups based on their bone measurements, and if so, which bone measurements are most informative for classification. 
+Based on the exploratory data analysis the research question will be: Can a machine learning model accurately classify birds into ecological groups based on their bone measurements, and if so, which bone measurements are most informative for classification? 
 
-Null hypothesis: There is no significant relationship between bird bone measurements and their ecological groups, and bone measurements are not informative for accurate classification. 
+Which then follows that the null hypothesis will be: There is no significant relationship between bird bone measurements and their ecological groups, and bone measurements are not informative for accurate classification. 
 
-Alternative hypothesis: There is a significant relationship between bird bone measurements and their ecological groups, and bone measurements are informative for accurate classification. 
+And so the alternative hypothesis: There is a significant relationship between bird bone measurements and their ecological groups, and bone measurements are informative for accurate classification. 
