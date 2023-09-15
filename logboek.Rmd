@@ -9,6 +9,13 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+#libraries 
+```{r}
+library(ggplot2)
+library(dplyr)
+library(grid)
+```
+
 ## week 1
 
 # Context:
@@ -53,6 +60,7 @@ summary(bird_data)
 ```
 # Missing data
 
+
 # Variation and distributions 
 
 # Class distribution 
@@ -60,3 +68,4 @@ summary(bird_data)
 # Correlation 
 
 # Research Question 
+Can a machine learning model accurately classify birds into ecological grouops based on their bone measurements, and if so, which bone measurements are most informative for classification. 
