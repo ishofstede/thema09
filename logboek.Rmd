@@ -17,6 +17,7 @@ library(grid)
 
 ## week 1
 
+
 # Context:
 This week a dataset will be chosen with the aim of creating a supervised ML model for classification. The choice was made to pick the a dataset on bird classification by bonestructure: https://www.kaggle.com/datasets/zhangjuefei/birds-bones-and-living-habits
 
@@ -33,6 +34,7 @@ Marine Birds (not included in dataset)
 The first 6 groups are covered by this dataset.
 
 Apparently, birds belonging to different ecological groups have different appearances: flying birds have strong wings and wading birds have long legs. Their living habits are somewhat reflected in their bones' shapes. As data scientists we may think of examining the underlying relationship between sizes of bones and ecological groups , and recognizing birds' ecological groups by their bone structure.
+
 
 # Status of data
 The dataset is made up of bird skeletons from collections of the Natural History Museum of Los Angeles County (data provided by Dr. D. Liu of Beijing Museum of Natural History). The dataset is a 420x10 size continuous values unbalanced multi-class dataset. There are 420 birds contained in this dataset. Each bird is represented by 10 measurements (features):
@@ -58,6 +60,7 @@ Pictured below are the attributes with their range and distribution:
 bird_data <- read.table('bird.csv', sep=",", header = 1)
 summary(bird_data)
 ```
+
 # Missing data
 The summary shows that there are missing values present. The significance of these entries must be checked. 
  
@@ -77,6 +80,36 @@ missing_data_type
 ```
 Apparently there are multiple songbirds with "missing bones". These missing values are most likely field data that was not properly formatted into the csv file. We shall further investigate the data to see if removing the entries with mission values will have an impact on the usability of the dataset. 
 
+
+# Variation and distributions 
+Boxplot:
+```{r}
+#boxplot of huml length 
+ggplot(bird_data, aes(x = huml, y = type)) + geom_boxplot() + labs(title = "huml length in mm", x = "(mm of bone)", y = "type")
+#boxplot of humw width 
+ggplot(bird_data, aes(x = humw, y = type)) + geom_boxplot() + labs(title = "humw length in mm", x = "(mm of bone)", y = "type")
+
+#boxplot of ulnal length
+ggplot(bird_data, aes(x = ulnal, y = type)) + geom_boxplot() + labs(title = "ulnal length in mm", x = "(mm of bone)", y = "type")
+#boxplot of ulnaw width
+ggplot(bird_data, aes(x = ulnaw, y = type)) + geom_boxplot() + labs(title = "ulnaw length in mm", x = "(mm of bone)", y = "type")
+
+#boxplot of feml length
+ggplot(bird_data, aes(x = ulnal, y = type)) + geom_boxplot() + labs(title = "feml length in mm", x = "(mm of bone)", y = "type")
+#boxplot of femw width
+ggplot(bird_data, aes(x = ulnaw, y = type)) + geom_boxplot() + labs(title = "femw length in mm", x = "(mm of bone)", y = "type")
+
+#boxplot of tibl length
+ggplot(bird_data, aes(x = ulnal, y = type)) + geom_boxplot() + labs(title = "ulnal length in mm", x = "(mm of bone)", y = "type")
+#boxplot of tibw width
+ggplot(bird_data, aes(x = ulnaw, y = type)) + geom_boxplot() + labs(title = "ulnaw length in mm", x = "(mm of bone)", y = "type")
+
+#boxplot of tarl length
+ggplot(bird_data, aes(x = tarl, y = type)) + geom_boxplot() + labs(title = "ulnal length in mm", x = "(mm of bone)", y = "type")
+#boxplot of tarw width
+ggplot(bird_data, aes(x = tarw, y = type)) + geom_boxplot() + labs(title = "ulnaw length in mm", x = "(mm of bone)", y = "type")
+```
+
 # Class distribution 
 We need to check whether or not the data is equally distributed between the types of birds. 
 ```{r}
@@ -87,29 +120,23 @@ class_distribution
 On a glance we can already see that the distribution follows a curve. A histogram will show the severity of the differences: 
 
 ```{r}
-#create a histogram per species
+#create a barchart per species
 ggplot(bird_data, aes(x = type)) + geom_bar(fill = "black") + labs(title = "distribution of bird species", x = "species", y = "count")
 ```
 
 Since the SO (songbirds) are over represented in the data, it seems fine to remove the entries with missing values. 
 
-# Variation and distributions 
-Boxplot:
-```{r}
-
-```
-
-Histogram:
-```{r}
-
-```
-
-
-
 
 # Correlation 
 
+```{r}
+# Create scatterplots
+pairs(bird_data[, 2:6], pch = 19)
 
+# Calculate and display correlations
+matrix <- cor(bird_data[, 1:4])
+print(matrix)
+```
 
 # Research Question 
 Based on the exploratory data analysis the research question will be: Can a machine learning model accurately classify birds into ecological groups based on their bone measurements, and if so, which bone measurements are most informative for classification? 
