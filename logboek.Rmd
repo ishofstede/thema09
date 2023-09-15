@@ -69,3 +69,7 @@ summary(bird_data)
 
 # Research Question 
 Can a machine learning model accurately classify birds into ecological groups based on their bone measurements, and if so, which bone measurements are most informative for classification. 
+
+Null hypothesis: There is no significant relationship between bird bone measurements and their ecological groups, and bone measurements are not informative for accurate classification. 
+
+Alternative hypothesis: There is a significant relationship between bird bone measurements and their ecological groups, and bone measurements are informative for accurate classification. 
