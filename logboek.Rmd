@@ -10,7 +10,13 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
+install.packages("ggplot2")       
+install.packages("GGally")
+```
+
+```{r}
 library(ggplot2)
+library(GGally)
 library(dplyr)
 library(grid)
 ```
@@ -117,7 +123,7 @@ We need to check whether or not the data is equally distributed between the type
 class_distribution <- table(bird_data$type)
 class_distribution
 ```
-On a glance we can already see that the distribution follows a curve. A histogram will show the severity of the differences: 
+On a glance we can already see that the distribution does not follow a curve, it is seemingly all over the place. There is an overrepresentation of songbirds (SO) and swimming birds (SW). Terrestrial birds (T) are the group with the least instances. Wading birds (W), raptos (R) and scansorial birds (P) are somewhere inbetween. 
 
 ```{r}
 #create a barchart per species
@@ -128,19 +134,27 @@ Since the SO (songbirds) are over represented in the data, it seems fine to remo
 
 
 # Correlation 
-
+Before checking, the logical assumption would be that the data is highly correlated, since all birds have similar bone structures and the birds within a specific type are going to look even more similar. To be sure, however, we can use a scatterplot to visualize the distribution of the bone sizes and the relationship between them. 
 ```{r}
-# Create scatterplots
-pairs(bird_data[, 2:6], pch = 19)
+# create a scatterplot of the humerus bone
+ggplot(bird_data,aes(x=huml,y=humw,color=type))+geom_point()+geom_smooth()
+# create a scatterplot of the ulna bone
+ggplot(bird_data,aes(x=ulnal,y=ulnaw,color=type))+geom_point()+geom_smooth()
+# create a scatterplot of the femur bone
+ggplot(bird_data,aes(x=feml,y=femw,color=type))+geom_point()+geom_smooth()
+# create scatterplots of the tibiotarsus
+ggplot(bird_data,aes(x=tibl,y=tibw,color=type))+geom_point()+geom_smooth()
+# create scatterplots of the tarsometatartus bone
+ggplot(bird_data,aes(x=tarl,y=tarw,color=type))+geom_point()+geom_smooth()
 
-# Calculate and display correlations
-matrix <- cor(bird_data[, 1:4])
-print(matrix)
 ```
+The data suggest that there is a correlation between bird types and their bone structures. The swimming birds (SW), however, seem to have a higher rate of outliers. This is not due to them being overrepresented in the data because if that were te case, songbirds (SO) outliers would be more prevalent This because SO are the biggest group in the dataset. It makes sense, because songbirds are often smaller so the distributions of bonesize would then be smaller as well.  
 
 # Research Question 
 Based on the exploratory data analysis the research question will be: Can a machine learning model accurately classify birds into ecological groups based on their bone measurements, and if so, which bone measurements are most informative for classification? 
 
 Which then follows that the null hypothesis will be: There is no significant relationship between bird bone measurements and their ecological groups, and bone measurements are not informative for accurate classification. 
 
-And so the alternative hypothesis: There is a significant relationship between bird bone measurements and their ecological groups, and bone measurements are informative for accurate classification. 
+And so the alternative hypothesis: There is a significant relationship between bird bone measurements and their ecological groups, and bone measurements are informative for accurate classification.
+
+Revised: Using machine learning algorithms, which bone emasurement are msot informative for classifying birds into ecological groups?
