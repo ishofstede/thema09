@@ -12,12 +12,12 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r echo = False, results = 'hide'}
+```{r}
 install.packages("ggplot2")       
 install.packages("GGally")
 ```
 
-```{r echo = False, results = 'hide'}
+```{r}
 library(ggplot2) #use for plotting correlation and scatter plot
 library(GGally)
 library(dplyr)
@@ -45,11 +45,11 @@ Birds belonging to different ecological groups have different appearances: flyin
 ## Status of data
 The dataset comes from kaggle (https://www.kaggle.com/datasets/zhangjuefei/birds-bones-and-living-habits). It is made up of measurements of bird skeletons from collections of the Natural History Museum of Los Angeles County (data provided by Dr. D. Liu of Beijing Museum of Natural History). It is a 420x10 size continuous values unbalanced multi-class dataset, meaning there are 420 birds contained in this dataset, each bird is represented by 10 measurements (features):
 
-Length and Diameter of Humerus
-Length and Diameter of Ulna
-Length and Diameter of Femur
-Length and Diameter of Tibiotarsus
-Length and Diameter of Tarsometatarsus
+Huml and Humw: Length and Diameter of Humerus
+Ulnal and Ulnaw: Length and Diameter of Ulna
+Feml and Femw: Length and Diameter of Femur
+Tibl and Tilw: Length and Diameter of Tibiotarsus
+Tarl and Tarw: Length and Diameter of Tarsometatarsus
 
 The class attribute is "type", referring to the ecological group. The bird skeletons belong to 21 orders, 153 genera, 245 species. Each bird has a label for its ecological group:
 
@@ -88,59 +88,33 @@ Apparently there are multiple songbirds with "missing bones". These missing valu
 
 ## Variation and distributions 
 To check the distribution of the data we can make boxplots of bonetypes for each type of bird. 
-```{r echo=FALSE,results='hide',fig.keep='all'}
-#boxplot of huml (length) 
+```{r warning=FALSE}
+#boxplot of all bonemeasurements
 p1 <- ggplot(bird_data, aes(x = type, y = huml)) + geom_boxplot() 
-#boxplot of humw (width) 
 p2 <- ggplot(bird_data, aes(x = type, y = humw)) + geom_boxplot() 
-
-#boxplot of ulnal (length)
 p3 <- ggplot(bird_data, aes(x = type, y = ulnal)) + geom_boxplot() 
-#boxplot of ulnaw (width)
 p4 <- ggplot(bird_data, aes(x = type, y = ulnaw)) + geom_boxplot()
-
-#boxplot of feml (length)
 p5 <- ggplot(bird_data, aes(x = type, y = feml)) + geom_boxplot() 
-#boxplot of femw (width)
 p6 <- ggplot(bird_data, aes(x = type, y = femw)) + geom_boxplot() 
-
-#boxplot of tibl (length)
-p7 <- ggplot(bird_data, aes(x = type, y = tibl)) + geom_boxplot() 
-#boxplot of tibw (width)
+p7 <- ggplot(bird_data, aes(x = type, y = tibl)) + geom_boxplot()
 p8 <- ggplot(bird_data, aes(x = type, y = tibw)) + geom_boxplot() 
-
-#boxplot of tarl (length)
 p9 <- ggplot(bird_data, aes(x = type, y = tarl)) + geom_boxplot()
-#boxplot of tarw (width)
 p10 <- ggplot(bird_data, aes(x = type, y = tarw)) + geom_boxplot()
 grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, nrow = 2)
 ```
 The data seems to have a lot of outliers, to see whether or not this is relevant we can do a log transformation to check the significance.
 
-```{r echo=FALSE,results='hide',fig.keep='all'}
-#logtransformed boxplot of huml 
+```{r warning=FALSE}
+#logtransformed boxplot of all bonemeasurements  
 plog1 <- ggplot(bird_data, aes(y = huml,x = type)) + geom_boxplot() + scale_y_continuous(trans = "log10")
-#logtransformed boxplot of humw
 plog2 <-ggplot(bird_data, aes(y = humw,x = type)) + geom_boxplot() + scale_y_continuous(trans = "log10")
-
-#logtransformed boxplot of ulnal
 plog3 <- ggplot(bird_data, aes(y = ulnal,x = type)) + geom_boxplot() + scale_y_continuous(trans = "log10")
-#logtransformed boxplot of ulnal
 plog4 <- ggplot(bird_data, aes(y = ulnaw,x = type)) + geom_boxplot() + scale_y_continuous(trans = "log10")
-
-#logtransformed boxplot of feml
 plog5 <- ggplot(bird_data, aes(y = feml,x = type)) + geom_boxplot() + scale_y_continuous(trans = "log10")
-#logtransformed boxplot of femw
 plog6 <- ggplot(bird_data, aes(y = femw,x = type)) + geom_boxplot() + scale_y_continuous(trans = "log10")
-
-#logtransformed boxplot of tibl
 plog7 <-ggplot(bird_data, aes(y = tibl,x = type)) + geom_boxplot() + scale_y_continuous(trans = "log10")
-#logtransformed boxplot of tibw
 plog8 <- ggplot(bird_data, aes(y = tibw,x = type)) + geom_boxplot() + scale_y_continuous(trans = "log10")
-
-#logtransformed boxplot of tarl
 plog9 <- ggplot(bird_data, aes(y = tarl,x = type)) + geom_boxplot() + scale_y_continuous(trans = "log10")
-#logtransformed boxplot of tarw
 plog10 <-ggplot(bird_data, aes(y = tarw,x = type)) + geom_boxplot() + scale_y_continuous(trans = "log10")
 grid.arrange(plog1, plog2, plog3, plog4, plog5, plog6, plog7, plog8, plog9, plog10, nrow = 2)
 ```
@@ -164,7 +138,7 @@ The 6 classes are not equally distributed.Since the SO (songbirds) are over repr
 
 ## Correlation 
 Before checking, the logical assumption would be that the data is highly correlated, since all birds have similar bone structures and the birds within a specific type are going to look even more similar. To be sure, however, we can use a scatterplot to visualize the distribution of the bone sizes and the relationship between them. 
-```{r, figures-side, fig.show="hold", out.width="50%"}
+```{r, figures-side, fig.show="hold", out.width="50%", warning=FALSE}
 # create a scatterplot of the humerus bone
 ggplot(bird_data,aes(x=huml,y=humw,color=type))+geom_point()+geom_smooth()
 # create a scatterplot of the ulna bone
@@ -178,7 +152,7 @@ ggplot(bird_data,aes(x=tarl,y=tarw,color=type))+geom_point()+geom_smooth()
 ```
 We can also look at a correlation plot:
 ```{r}
-#correlation plot (start from 2 because id has not been removed yet)
+#correlation matrix (start from 2 because id has not been removed yet)
 ggcorr(bird_data[, 2:11], label = TRUE)
 ```
 
@@ -193,17 +167,17 @@ And so the alternative hypothesis: There is a significant relationship between b
 
 # Week 3
 ## Cleaning dataset
-The 7 missing values shall be removed and a new CSV file will be created. This will be the clean dataset with which we will perform machine learning. 
+The 7 missing values and the id's shall be removed and a new CSV file will be created. This will be the clean dataset with which we will perform machine learning. 
 ```{r}
-#remove the first row ID's because they are not required
+#remove the first row ID's and all NA's
 clean_bird_data <- bird_data[,-1]
-#remove NA's
-
+clean_bird_data <- na.omit(clean_bird_data)
 #check if any missing values are left
-#colSums(is.na(df))
-
+colSums(is.na(clean_bird_data))
 #Check if the means remain the same
-#aggregate(df[, 1:10], list(df$type), mean,  na.rm=TRUE)
+aggregate(clean_bird_data[, 1:10], list(clean_bird_data$type), mean,  na.rm=TRUE)
+#Check if the means remain the same
+aggregate(bird_data[, 2:11], list(bird_data$type), mean,  na.rm=FALSE)
 ```
-
+There is a negligible shift in the means. A new dataset has been created, called "clean_bird_data". 
 
