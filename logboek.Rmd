@@ -3,160 +3,190 @@ title: "thema09_logboek"
 author: "Isabella Hofstede"
 date: "2023-09-13"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 # week 1
-## Libraries
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r include=FALSE}
 install.packages("ggplot2")       
 install.packages("GGally")
 ```
 
-```{r}
+```{r include=FALSE}
 library(ggplot2) #use for plotting correlation and scatter plot
 library(GGally)
 library(dplyr)
 library(grid)
 library(gridExtra)
+library(tidyverse) #used for ANOVA
 ```
 
-
 ## Context:
-A dataset has been chosen with the aim of creating a supervised ML model for classification. The choice was made to pick the a dataset on bird classification by bonestructure. There are different types of birds, ranging from flying to swimming to running birds. For this dataset, birds have been classified into ecological groups according to their habitats. There are 8 ecological groups of birds:
+A dataset has been chosen with the aim of creating a supervised ML model for classification. We picked a dataset on bird classification by bonestructure. There are different types of birds, ranging from flying, to swimming, to running birds. For this dataset, birds have been classified into ecological groups according to their habitats. There are 8 ecological groups of birds:
 
-Swimming Birds
-Wading Birds
-Terrestrial Birds
-Raptors
-Scansorial Birds
-Singing Birds
-Cursorial Birds (not included in dataset)
-Marine Birds (not included in dataset)
-The first 6 groups are covered by this dataset.
+- Swimming Birds;
+- Wading Birds;
+- Terrestrial Birds;
+- Raptors;
+- Scansorial Birds;
+- Singing Birds;
+- Cursorial Birds (not included in dataset);
+- Marine Birds (not included in dataset).
 
-Birds belonging to different ecological groups have different appearances: flying birds have strong wings and wading birds have long legs. Their living habits are somewhat reflected in their bones' shapes. We may think of examining the underlying relationship between sizes of bones and ecological groups , and recognizing birds' ecological groups by their bone structure.
-
+The first 6 groups are covered by this dataset. Birds belonging to different ecological groups have different appearances: flying birds have strong wings and wading birds have long legs. Their living habits are somewhat reflected in their bones' shapes. We may think of examining the underlying relationship between sizes of bones and ecological groups , and recognizing birds's ecological groups by their bone structure.
 
 ## Status of data
 The dataset comes from kaggle (https://www.kaggle.com/datasets/zhangjuefei/birds-bones-and-living-habits). It is made up of measurements of bird skeletons from collections of the Natural History Museum of Los Angeles County (data provided by Dr. D. Liu of Beijing Museum of Natural History). It is a 420x10 size continuous values unbalanced multi-class dataset, meaning there are 420 birds contained in this dataset, each bird is represented by 10 measurements (features):
 
-Huml and Humw: Length and Diameter of Humerus
-Ulnal and Ulnaw: Length and Diameter of Ulna
-Feml and Femw: Length and Diameter of Femur
-Tibl and Tilw: Length and Diameter of Tibiotarsus
-Tarl and Tarw: Length and Diameter of Tarsometatarsus
+- Huml and Humw: Length and Diameter of Humerus;
+- Ulnal and Ulnaw: Length and Diameter of Ulna;
+- Feml and Femw: Length and Diameter of Femur;
+- Tibl and Tilw: Length and Diameter of Tibiotarsus;
+- Tarl and Tarw: Length and Diameter of Tarsometatarsus.
 
 The class attribute is "type", referring to the ecological group. The bird skeletons belong to 21 orders, 153 genera, 245 species. Each bird has a label for its ecological group:
 
-SW: Swimming Birds
-W: Wading Birds
-T: Terrestrial Birds
-R: Raptors
-P: Scansorial Birds
-SO: Singing Birds
+- SW: Swimming Birds;
+- W: Wading Birds;
+- T: Terrestrial Birds;
+- R: Raptors;
+- P: Scansorial Birds;
+- SO: Singing Birds.
 
 ## Data exploration
-Pictured below is a summary of the dataset:
+Firstly, we need to have an overview of our data. Pictured below is a summary of the dataset:
 ```{r}
 #load the data
 bird_data <- read.table('bird.csv', sep=",", header = 1)
 summary(bird_data)
 ```
-
-## Missing data
-The summary shows that there are missing values present. The significance of these entries must be checked.
- 
+A first look shows a wide range of sizes and just a few missing values. The significance of these entries must be checked.
 ```{r}
-#checking for NA values 
-missing_data <- sapply(bird_data, function(x) sum(is.na(x)))
-missing_data
+#checking total NA's in dataset
+sum(is.na(bird_data))
 ```
-There are a total of 420 entries with 7 having missing values. The missing values are the measurements of certain bones but none of the main attribute data; "type", is missing. This means a choice must be made to discard the missing data or perform imputation, which means replacing the missing data with substitutions. However 7 out of 420 means the instances with missing values account for less than 2% of the dataset, so then they may just be insignificant enough to remove entirely. Let's also think about why the data is missing; is it significant to specific types of birds or is the data quite random?
+There are 15 missing values. Let's see which birds those values are attatched to;
 
 ```{r}
 #checking which types of birds have missing data
 missing_data_type <- bird_data$type[apply(is.na(bird_data), 1, any)]
 missing_data_type
 ```
-Apparently there are multiple songbirds with "missing bones". These missing values are most likely field data that was not properly formatted into the csv file. We shall further investigate the data to see if removing the entries with mission values will have an impact on the usability of the dataset. 
 
+So there are a total of 7 birds with missing values. This means there are a total 420 entries with 15 missing values spread across 7 birds. The missing values are the measurements of certain bones but none of the main attribute data; "type", is missing. Apparently there are a few birds with "missing bones". This means a choice must be made to discard the missing data or perform imputation, which means replacing the missing data with substitutions. However 7 out of 420 means the observations with missing values account for less than 2% of the dataset, and may be insignificant enough to remove entirely. Let's also think about why the data is missing; is it significant to specific types of birds or is the data quite random? 
 
-## Variation and distributions 
-To check the distribution of the data we can make boxplots of bonetypes for each type of bird. 
-```{r warning=FALSE}
-#boxplot of all bonemeasurements
-p1 <- ggplot(bird_data, aes(x = type, y = huml)) + geom_boxplot() 
-p2 <- ggplot(bird_data, aes(x = type, y = humw)) + geom_boxplot() 
-p3 <- ggplot(bird_data, aes(x = type, y = ulnal)) + geom_boxplot() 
-p4 <- ggplot(bird_data, aes(x = type, y = ulnaw)) + geom_boxplot()
-p5 <- ggplot(bird_data, aes(x = type, y = feml)) + geom_boxplot() 
-p6 <- ggplot(bird_data, aes(x = type, y = femw)) + geom_boxplot() 
-p7 <- ggplot(bird_data, aes(x = type, y = tibl)) + geom_boxplot()
-p8 <- ggplot(bird_data, aes(x = type, y = tibw)) + geom_boxplot() 
-p9 <- ggplot(bird_data, aes(x = type, y = tarl)) + geom_boxplot()
-p10 <- ggplot(bird_data, aes(x = type, y = tarw)) + geom_boxplot()
-grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, nrow = 2)
+These missing values are most likely field data that was not properly formatted into the csv file. Since the SO (songbirds) are over represented in the data, it seems fine to remove the entries with missing values. The missing values also have no real meaning, since every bird is supposed to have the same amount of bones, which means the missing values are just bones that were not measured.
+
+## Cleaning dataset
+The 7 missing values and the id column shall be removed and a new CSV file will be created. This will be the clean dataset with which we will perform machine learning. 
+```{r}
+#remove the ID's and NA's
+clean_bird_data <- na.omit(bird_data)
+clean_bird_data <- subset(clean_bird_data, select = -id)
+#check if any missing values are left
+colSums(is.na(clean_bird_data))
+#write the csv file with cleaned dataset. 
+write.csv(clean_bird_data, "bird_clean.csv", row.names = F)
 ```
-The data seems to have a lot of outliers, to see whether or not this is relevant we can do a log transformation to check the significance.
 
-```{r warning=FALSE}
-#logtransformed boxplot of all bonemeasurements  
-plog1 <- ggplot(bird_data, aes(y = huml,x = type)) + geom_boxplot() + scale_y_continuous(trans = "log10")
-plog2 <-ggplot(bird_data, aes(y = humw,x = type)) + geom_boxplot() + scale_y_continuous(trans = "log10")
-plog3 <- ggplot(bird_data, aes(y = ulnal,x = type)) + geom_boxplot() + scale_y_continuous(trans = "log10")
-plog4 <- ggplot(bird_data, aes(y = ulnaw,x = type)) + geom_boxplot() + scale_y_continuous(trans = "log10")
-plog5 <- ggplot(bird_data, aes(y = feml,x = type)) + geom_boxplot() + scale_y_continuous(trans = "log10")
-plog6 <- ggplot(bird_data, aes(y = femw,x = type)) + geom_boxplot() + scale_y_continuous(trans = "log10")
-plog7 <-ggplot(bird_data, aes(y = tibl,x = type)) + geom_boxplot() + scale_y_continuous(trans = "log10")
-plog8 <- ggplot(bird_data, aes(y = tibw,x = type)) + geom_boxplot() + scale_y_continuous(trans = "log10")
-plog9 <- ggplot(bird_data, aes(y = tarl,x = type)) + geom_boxplot() + scale_y_continuous(trans = "log10")
-plog10 <-ggplot(bird_data, aes(y = tarw,x = type)) + geom_boxplot() + scale_y_continuous(trans = "log10")
-grid.arrange(plog1, plog2, plog3, plog4, plog5, plog6, plog7, plog8, plog9, plog10, nrow = 2)
-```
-Most outliers of the SW group have been removed entirely. There are still plenty of outliers in T group, but since it's the smallest group no instances shall be removed. 
+All the missing values have been removed and the cleaned data can now be used for further analysis.
 
 ## Class distribution 
 We need to check whether or not the data is equally distributed between the types of birds. 
 ```{r}
-#check the distribution of the bird types
-class_distribution <- table(bird_data$type)
-class_distribution
-```
-On a glance we can already see that the distribution is not equal, it is seemingly all over the place. There is an overrepresentation of songbirds (SO) and swimming birds (SW). Terrestrial birds (T) are the group with the least instances. Wading birds (W), raptos (R) and scansorial birds (P) are somewhere inbetween. 
-
-```{r}
 #create a barchart per species
-ggplot(bird_data, aes(x = type)) + geom_bar(fill = "black") + labs(title = "distribution of bird species", x = "species", y = "count")
+ggplot(clean_bird_data, aes(x = type)) + geom_bar(fill = "black") + 
+  labs(title = "distribution of bird species", x = "species", y = "count")
 ```
 
-The 6 classes are not equally distributed.Since the SO (songbirds) are over represented in the data, it seems fine to remove the entries with missing values. The missing values also have no real meaning, since every bird is supposed to have the same amount of bones, which means the missing values just were not measured.
+On a glance we can already see that the distribution is not equal, it is seemingly all over the place. There is an over representation of songbirds (SO) and Swimming birds (SW). Terrestrial birds (T) are the group with the least instances. Wading birds (W), Raptos (R) and Scansorial birds (P) are somewhere in between. The 6 classes are not equally distributed. To remedy this, we may double the lowest group or half the biggest group if the training models are insufficiently trained. For now though, we shall use the dataset as is without any further changes. 
+
+## Variation and distributions 
+To check the distribution of the data we can make boxplots of bonetypes for each type of bird. We want to look for outliers in each type. 
+```{r warning=FALSE}
+#boxplot of all bonemeasurements
+p1 <- ggplot(clean_bird_data, aes(x = type, y = huml)) + geom_boxplot() 
+p2 <- ggplot(clean_bird_data, aes(x = type, y = humw)) + geom_boxplot() 
+p3 <- ggplot(clean_bird_data, aes(x = type, y = ulnal)) + geom_boxplot() 
+p4 <- ggplot(clean_bird_data, aes(x = type, y = ulnaw)) + geom_boxplot()
+p5 <- ggplot(clean_bird_data, aes(x = type, y = feml)) + geom_boxplot() 
+p6 <- ggplot(clean_bird_data, aes(x = type, y = femw)) + geom_boxplot() 
+p7 <- ggplot(clean_bird_data, aes(x = type, y = tibl)) + geom_boxplot()
+p8 <- ggplot(clean_bird_data, aes(x = type, y = tibw)) + geom_boxplot() 
+p9 <- ggplot(clean_bird_data, aes(x = type, y = tarl)) + geom_boxplot()
+p10 <- ggplot(clean_bird_data, aes(x = type, y = tarw)) + geom_boxplot()
+grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, nrow = 2)
+```
+
+The data seems to have a lot of outliers, to see whether or not this is relevant we can do a log transformation to check the significance.
+
+
+```{r warning=FALSE}
+#logtransformed boxplot of all bonemeasurements  
+plog1 <- ggplot(clean_bird_data, aes(y = huml,x = type)) + geom_boxplot() + 
+  scale_y_continuous(trans = "log10")
+plog2 <-ggplot(clean_bird_data, aes(y = humw,x = type)) + geom_boxplot() + 
+  scale_y_continuous(trans = "log10")
+plog3 <- ggplot(clean_bird_data, aes(y = ulnal,x = type)) + geom_boxplot() + 
+  scale_y_continuous(trans = "log10")
+plog4 <- ggplot(clean_bird_data, aes(y = ulnaw,x = type)) + geom_boxplot() + 
+  scale_y_continuous(trans = "log10")
+plog5 <- ggplot(clean_bird_data, aes(y = feml,x = type)) + geom_boxplot() + 
+  scale_y_continuous(trans = "log10")
+plog6 <- ggplot(clean_bird_data, aes(y = femw,x = type)) + geom_boxplot() + 
+  scale_y_continuous(trans = "log10")
+plog7 <-ggplot(clean_bird_data, aes(y = tibl,x = type)) + geom_boxplot() + 
+  scale_y_continuous(trans = "log10")
+plog8 <- ggplot(clean_bird_data, aes(y = tibw,x = type)) + geom_boxplot() + 
+  scale_y_continuous(trans = "log10")
+plog9 <- ggplot(clean_bird_data, aes(y = tarl,x = type)) + geom_boxplot() + 
+  scale_y_continuous(trans = "log10")
+plog10 <-ggplot(clean_bird_data, aes(y = tarw,x = type)) + geom_boxplot() + 
+  scale_y_continuous(trans = "log10")
+grid.arrange(plog1, plog2, plog3, plog4, plog5, plog6, plog7, plog8, plog9,
+             plog10, nrow = 2)
+```
+
+Most outliers of the SW group have been removed entirely. There are still plenty of outliers in T group, but since it's the smallest group no instances shall be removed. It is safe to assume that the outliers are actually just bigger and smaller birds. From now on we can assume the outliers are not significant enough to be removed and thus the regular dataset will be used for machine learning. This data can be used for trees, but if these algorithms prove inssuficient, logtransformed data may be used for Naive Bayes.
+
+How can we see if a variable is informative for machine learning? To find out, we will perform an ANOVA on each bone type per bird type and sort the p-values. This will help us determine the most useful values for prediction, even though the distribution it is scewed. (can use t-values as well to order it)
+```{r}
+aov.models = clean_bird_data[ , -grep("type", names(clean_bird_data))] %>%
+  map(~ aov(clean_bird_data$type ~ .x))
+```
+
+!!!is een variable informatief voor ml? zoek het uit; annova doen op elke bot type PER type vogel. Op p-waarden sorteren. helpful voor trees. Ordenen bij meest en minst verschillende waardes. 
+
+
 
 ## Correlation 
 Before checking, the logical assumption would be that the data is highly correlated, since all birds have similar bone structures and the birds within a specific type are going to look even more similar. To be sure, however, we can use a scatterplot to visualize the distribution of the bone sizes and the relationship between them. 
+
 ```{r, figures-side, fig.show="hold", out.width="50%", warning=FALSE}
-# create a scatterplot of the humerus bone
-ggplot(bird_data,aes(x=huml,y=humw,color=type))+geom_point()+geom_smooth()
-# create a scatterplot of the ulna bone
-ggplot(bird_data,aes(x=ulnal,y=ulnaw,color=type))+geom_point()+geom_smooth()
-# create a scatterplot of the femur bone
-ggplot(bird_data,aes(x=feml,y=femw,color=type))+geom_point()+geom_smooth()
-# create scatterplots of the tibiotarsus
-ggplot(bird_data,aes(x=tibl,y=tibw,color=type))+geom_point()+geom_smooth()
-# create scatterplots of the tarsometatartus bone
-ggplot(bird_data,aes(x=tarl,y=tarw,color=type))+geom_point()+geom_smooth()
+# create a scatterplot of the bone lengths and widths. 
+ggplot(clean_bird_data,aes(x=huml,y=humw,color=type))+geom_point()+
+  geom_smooth()
+ggplot(clean_bird_data,aes(x=ulnal,y=ulnaw,color=type))+geom_point()+
+  geom_smooth()
+ggplot(clean_bird_data,aes(x=feml,y=femw,color=type))+geom_point()+
+  geom_smooth()
+ggplot(clean_bird_data,aes(x=tibl,y=tibw,color=type))+geom_point()+
+  geom_smooth()
+ggplot(clean_bird_data,aes(x=tarl,y=tarw,color=type))+geom_point()+
+  geom_smooth()
 ```
-We can also look at a correlation plot:
-```{r}
+The scatterplot suggest that there is a correlation between bird types and their bone structures. We can also look at a correlation matrix to see precisely how highly correlated our data is:
+
+```{r, warning=FALSE}
 #correlation matrix (start from 2 because id has not been removed yet)
-ggcorr(bird_data[, 2:11], label = TRUE)
+ggcorr(clean_bird_data, label = TRUE)
 ```
 
-The scatterplot suggest that there is a correlation between bird types and their bone structures. Unsurprisingly the correlation matrix also gave us a large positive correlation between all our measurements. This is of course because when birds get bigger, so do their bone measurement. The swimming birds (SW), however, seem to have a higher rate of outliers. This is not due to them being overrepresented in the data because if that were te case, songbirds (SO) outliers would also be more prevalent. This because SO are the biggest group in the dataset. It makes sense that SW has a lot of outliers because big birds, like swans, and small birds, like coots, are both classified as swimming birds. Since the correlation between different bird species is so high, we need to think about which model could classify them accurately. 
+Unsurprisingly the correlation matrix also gave us a large positive correlation between all our measurements. This is of course because when birds get bigger, so do their bone measurements. The swimming birds (SW), however, seem a lot bigger than the others. It makes sense that SW has a lot of different measurements because big birds, like swans, and small birds, like coots, are both classified as swimming birds. Since the correlation between different bird species is so high, classification could prove difficult. We need to keep this in mind when choosing out model. 
 
 ## Research Question 
 Based on the exploratory data analysis the research question will be: Using machine learning algorithms, which bone measurements are most informative for classifying birds into ecological groups?
@@ -166,18 +196,7 @@ Which then follows that the null hypothesis will be: There is no significant rel
 And so the alternative hypothesis: There is a significant relationship between bird bone measurements and their ecological groups, and bone measurements are informative for accurate classification.
 
 # Week 3
-## Cleaning dataset
-The 7 missing values and the id's shall be removed and a new CSV file will be created. This will be the clean dataset with which we will perform machine learning. 
-```{r}
-#remove the first row ID's and all NA's
-clean_bird_data <- bird_data[,-1]
-clean_bird_data <- na.omit(clean_bird_data)
-#check if any missing values are left
-colSums(is.na(clean_bird_data))
-#Check if the means remain the same
-aggregate(clean_bird_data[, 1:10], list(clean_bird_data$type), mean,  na.rm=TRUE)
-#Check if the means remain the same
-aggregate(bird_data[, 2:11], list(bird_data$type), mean,  na.rm=FALSE)
-```
-There is a negligible shift in the means. A new dataset has been created, called "clean_bird_data". 
+
+## Machine learning in wekka
+
 
