@@ -151,7 +151,7 @@ grid.arrange(plog1, plog2, plog3, plog4, plog5, plog6, plog7, plog8, plog9,
              plog10, nrow = 2)
 ```
 
-Most outliers of the SW group have been removed entirely. There are still plenty of outliers in T group, but since it's the smallest group no instances shall be removed. It is safe to assume that the outliers are actually just bigger and smaller birds. From now on we can assume the outliers are not significant enough to be removed and thus the regular dataset will be used for machine learning. This data can be used for trees, but if these algorithms prove inssuficient, logtransformed data may be used for Naive Bayes.
+Most outliers of the SW group have been removed entirely. There are still plenty of outliers in T group, but since it's the smallest group no instances shall be removed. It is safe to assume that the outliers are actually just bigger and smaller birds. From now on we can assume the outliers are not significant enough to be removed and thus the regular dataset will be used for machine learning. This data can be used for trees, but if these algorithms prove insufficient, logtransformed data may be used for Naive Bayes.
 
 How can we see if a variable is informative for machine learning? To find out, we will perform an ANOVA on each bone type per bird type and sort the p-values. This will help us determine the most useful values for prediction, even though the distribution it is scewed. (can use t-values as well to order it)
 ```{r}
@@ -167,7 +167,7 @@ aov.models = clean_bird_data[ , -grep("type", names(clean_bird_data))] %>%
 Before checking, the logical assumption would be that the data is highly correlated, since all birds have similar bone structures and the birds within a specific type are going to look even more similar. To be sure, however, we can use a scatterplot to visualize the distribution of the bone sizes and the relationship between them. 
 
 ```{r, figures-side, fig.show="hold", out.width="50%", warning=FALSE}
-# create a scatterplot of the bone lengths and widths. 
+#create a scatterplot of the bone lengths and widths. 
 ggplot(clean_bird_data,aes(x=huml,y=humw,color=type))+geom_point()+
   geom_smooth()
 ggplot(clean_bird_data,aes(x=ulnal,y=ulnaw,color=type))+geom_point()+
@@ -198,5 +198,29 @@ And so the alternative hypothesis: There is a significant relationship between b
 # Week 3
 
 ## Machine learning in wekka
+Considering our dataset is highly imbalanced, we can already guess that trees and boost algorithms will perform better than any other algorithms. Regardless, the selection of machine learning models has been made to cover to include representatives of all classifier categories:
+
+- ZeroR (baseline measurement)
+- oneR (baseline measurement)
+- J48 (IB3) 
+- Naive Bayes
+- K-Nearest Neighbor (IBK)
+- Simple Logistic Regression
+- Random forest
+
+Some of these algorithms, like Naive Bayes,  will not work well with imbalanced datasets. We can fix this by either under- or oversampling our dataset. This sampling will be done in Wekka for ease of use. 
+
+parameters: 
+number of repetitions = 10 
 
 
+*verschillende dafasets
+-met/zonder NAs
+-met/zonder logtransformatie
+-met/zonder standardisatie/normalisatie
+-verschillende selectie van attributen (welke variabelen zijn het beste?)
+in wekka de comparisons met experimenter -> laden in R 
+runtimes/ttests/barplot van welk algo het beste doet
+
+gradient boosting:
+https://www.r-bloggers.com/2021/02/machine-learning-with-r-a-complete-guide-to-gradient-boosting-and-xgboost/
