@@ -202,8 +202,9 @@ Considering our dataset is highly imbalanced, we can already guess that trees an
 
 - ZeroR (baseline measurement)
 - oneR (baseline measurement)
-- J48 (IB3) 
+- J48 
 - Naive Bayes
+- SMO
 - K-Nearest Neighbor (IBK)
 - Simple Logistic Regression
 - Random forest
@@ -212,7 +213,9 @@ Some of these algorithms, like Naive Bayes,  will not work well with imbalanced 
 
 parameters: 
 number of repetitions = 10 
+Using the default settings of Wekka, all algoritms scored higher than the ZeroR algorithm. 
 
+Hyperparameters; 
 
 *verschillende dafasets
 -met/zonder NAs
@@ -222,5 +225,15 @@ number of repetitions = 10
 in wekka de comparisons met experimenter -> laden in R 
 runtimes/ttests/barplot van welk algo het beste doet
 
-gradient boosting:
-https://www.r-bloggers.com/2021/02/machine-learning-with-r-a-complete-guide-to-gradient-boosting-and-xgboost/
+Er is een experiment in uitgevoerd in Wekka met de default waarden van alle boven vernoemde algoritmes. 
+```{r}
+wekka_default <- read.csv("wekka_exp_default.csv", header = T)
+```
+
+```{r}
+
+```
+
+De resultaten wijzen zoals voorspeld op de tree en nearest neighbor classification aloritmen. 
+
+
