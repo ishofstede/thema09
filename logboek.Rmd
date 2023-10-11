@@ -7,6 +7,7 @@ output:
   pdf_document: default
 ---
 # week 1
+For the purpose of this project a few packages and libraries will be installed. 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -14,15 +15,18 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r include=FALSE}
 install.packages("ggplot2")       
 install.packages("GGally")
+install.packages("codebookr")
 ```
 
 ```{r include=FALSE}
 library(ggplot2) #use for plotting correlation and scatter plot
 library(GGally)
-library(dplyr)
 library(grid)
 library(gridExtra)
 library(tidyverse) #used for ANOVA
+library(codebookr) #used for codebook
+library(dplyr, warn.conflicts = FALSE) #used for codebook
+library(haven) #used for codebook
 ```
 
 ## Context:
@@ -62,8 +66,14 @@ Firstly, we need to have an overview of our data. Pictured below is a summary of
 ```{r}
 #load the data
 bird_data <- read.table('bird.csv', sep=",", header = 1)
-summary(bird_data)
 ```
+
+Pictured below is a codebook with all the relevant information;
+```{r}
+codebook <- readr::read_delim("bird.csv", delim = ",", show_col_types = F)
+pander::pander(codebook[, 1:11], style = "rmarkdown")
+```
+
 A first look shows a wide range of sizes and just a few missing values. The significance of these entries must be checked.
 ```{r}
 #checking total NA's in dataset
@@ -155,8 +165,8 @@ Most outliers of the SW group have been removed entirely. There are still plenty
 
 How can we see if a variable is informative for machine learning? To find out, we will perform an ANOVA on each bone type per bird type and sort the p-values. This will help us determine the most useful values for prediction, even though the distribution it is scewed. (can use t-values as well to order it)
 ```{r}
-aov.models = clean_bird_data[ , -grep("type", names(clean_bird_data))] %>%
-  map(~ aov(clean_bird_data$type ~ .x))
+#aov.models = clean_bird_data[ , -grep("type", names(clean_bird_data))] %>%
+#  map(~ aov(clean_bird_data$type ~ .x))
 ```
 
 !!!is een variable informatief voor ml? zoek het uit; annova doen op elke bot type PER type vogel. Op p-waarden sorteren. helpful voor trees. Ordenen bij meest en minst verschillende waardes. 
@@ -195,10 +205,13 @@ Which then follows that the null hypothesis will be: There is no significant rel
 
 And so the alternative hypothesis: There is a significant relationship between bird bone measurements and their ecological groups, and bone measurements are informative for accurate classification.
 
-# Week 3
+# Week 4
+
+## Quality metrics 
+To assess the performance of our algorithm there are a few metrics that are commonly used; accuracy, speed, precision/recall and F1-score. Nearly all these values can be recorded in a confusion matrix. For our project, accuracy is the most important metric to assess the quality of the algorithm. Speed is not a metric that is important for this relatively low amount of data. 
 
 ## Machine learning in wekka
-Considering our dataset is highly imbalanced, we can already guess that trees and boost algorithms will perform better than any other algorithms. Regardless, the selection of machine learning models has been made to cover to include representatives of all classifier categories:
+Considering our dataset is highly imbalanced, we can already guess that trees will perform better than any other algorithms. Regardless, the selection of machine learning models has been made to cover to include representatives of all classifier categories:
 
 - ZeroR (baseline measurement)
 - oneR (baseline measurement)
@@ -209,31 +222,121 @@ Considering our dataset is highly imbalanced, we can already guess that trees an
 - Simple Logistic Regression
 - Random forest
 
-Some of these algorithms, like Naive Bayes,  will not work well with imbalanced datasets. We can fix this by either under- or oversampling our dataset. This sampling will be done in Wekka for ease of use. 
-
-parameters: 
-number of repetitions = 10 
-Using the default settings of Wekka, all algoritms scored higher than the ZeroR algorithm. 
-
-Hyperparameters; 
-
-*verschillende dafasets
--met/zonder NAs
--met/zonder logtransformatie
--met/zonder standardisatie/normalisatie
--verschillende selectie van attributen (welke variabelen zijn het beste?)
-in wekka de comparisons met experimenter -> laden in R 
-runtimes/ttests/barplot van welk algo het beste doet
-
-Er is een experiment in uitgevoerd in Wekka met de default waarden van alle boven vernoemde algoritmes. 
-```{r}
-wekka_default <- read.csv("wekka_exp_default.csv", header = T)
-```
+Some of these algorithms, like Naive Bayes,  will not work well with imbalanced datasets. We could fix this by either under- or oversampling our dataset, but the remaining algorithms like trees and logistic regression are known to perform better on imbalanced datasets. First we will compare all the algorithms and their default values in Wekka with the clean dataset using Wekka experimenter. 
 
 ```{r}
-
+wekka_default <- read.csv("wekka_exp_default.csv", header=T)
+results_default <- aggregate(wekka_default$Percent_correct, list(wekka_default$Key_Scheme), mean)
+colnames(results_default) <- c("algorithm", "percentage correct")
+results_default
 ```
 
-De resultaten wijzen zoals voorspeld op de tree en nearest neighbor classification aloritmen. 
+All the chosen algorithms scored higher than ZeroR and OneR. The most promising results come from the K-Nearest Neighbor (89.16% correct), Simple logistic (85.24% correct) and the Random Forest (84.54% correct) algorithm. We will use these for further analysis. 
+
+# Week 5 
+
+## Attribute selection
+Loading in the clean dataset, we use the Wekka Explorer to select attributes. WE mix attribute evaluators with 
+=== Attribute Selection on all input data ===
+
+Search Method:
+	Attribute ranking.
+
+Attribute Evaluator (supervised, Class (nominal): 11 type):
+	OneR feature evaluator.
+
+	Using 10 fold cross validation for evaluating attributes.
+	Minimum bucket size for OneR: 6
+
+Ranked attributes:
+54.9637   1 huml
+53.0266   4 ulnaw
+52.7845   2 humw
+51.3317   3 ulnal
+49.6368   7 tibl
+47.6998  10 tarw
+47.6998   5 feml
+46.4891   8 tibw
+44.7942   6 femw
+42.8571   9 tarl
+
+For the one OneR feature evaluator + ranker method it seems huml and ulnaw is the highest scoring attribute.  
 
 
+=== Attribute Selection on all input data ===
+Search Method:
+	Exhaustive Search.
+	Start set: no attributes
+	Number of evaluations: 1024
+	Merit of best subset found:    0.427
+
+Attribute Subset Evaluator (supervised, Class (nominal): 11 type):
+	CFS Subset Evaluator
+	Including locally predictive attributes
+
+Selected attributes: 1,3,4,10 : 4
+                     huml
+                     ulnal
+                     ulnaw
+                     tarw
+
+For CFS subset evaluator + exhaustive search method again it seems huml and unlal are highest scoring.
+
+
+=== Attribute Selection on all input data ===
+
+Search Method:
+	Exhaustive Search.
+	Start set: no attributes
+	Number of evaluations: 1024
+	Merit of best subset found:    0.897
+
+Attribute Subset Evaluator (supervised, Class (nominal): 11 type):
+	Wrapper Subset Evaluator
+	Learning scheme: weka.classifiers.lazy.IBk
+	Scheme options: -K 1 -W 0 -A weka.core.neighboursearch.LinearNNSearch -A "weka.core.EuclideanDistance -R first-last" 
+	Subset evaluation: classification accuracy
+	Number of folds for accuracy estimation: 5
+
+
+Selected attributes: 1,2,3,5,6,7,9,10 : 8
+                     huml
+                     humw
+                     ulnal
+                     feml
+                     femw
+                     tibl
+                     tarl
+                     tarw
+
+For Wrapper subset evaluator + exhaustive search it seems huml and humw are the highest scoring. 
+
+Overall it seems the length and width of the humerus and ulna are the most significant measurements for accurate classification of bird groups. These bones are located in the sings of the bird. It makes sense that wingspan would determine the group that the bird belongs to. Lagging behind in ranking are the femur and tibiotarsus bones, which are located in the legs of the bird. 
+
+
+## stappenplan 
+OneRattribute
+Ranker + gainratio 
+
+CFs subset evaluator
+met groepjes ranken 
+zeggen veel over classe maar onderling verschillend. 
+
+CfssubsetEval met ExhaustiveSearch
+                     
+gooi bij je data alles eruit hevalve huml, save het als arff  file
+ga naar experimenter, set nieuw experiment op, gooi alle data erin, cleaned, en single variables, en 1 variable
+add new -> zeroR, Naivebayes, Classificationviaclustering (simpleKmeans), simplelogistic, forrest
+kruisvalideren. 
+100 number repetitions. 
+run het 
+het final model is bijv "kmeans" met huml en ulna variabelen. 
+check bij comarison field wat er allemaal in zit 
+
+ranking 
+cfs 
+wrapper 
+CorrelationAttributeEVal no class
+
+wekka true positive rate and false positive rate plotten ROC curve (kan ook screenshotje toevoegen in R)
+ 
