@@ -6,27 +6,64 @@ output:
   html_document: default
   pdf_document: default
 ---
-# week 1
-For the purpose of this project a few packages and libraries will be installed. 
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r include=FALSE}
-install.packages("ggplot2")       
-install.packages("GGally")
-install.packages("codebookr")
+# week 1
+For the purpose of this project a few packages and libraries will be installed. All of these are for the purpose of either plotting or formatting the data or plots.
+Installing haven for formatting:
+```{r echo = T, results = 'hide', warning=FALSE, message=FALSE}
+#check if package is installed
+if (!require(haven)){
+  #if not, install it
+  install.packages("haven", dependencies = TRUE)
+  #if installed, load library
+  library(haven)
+}
 ```
-
-```{r include=FALSE}
-library(ggplot2) #use for plotting correlation and scatter plot
-library(GGally)
-library(grid)
-library(gridExtra)
-library(tidyverse) #used for ANOVA
-library(codebookr) #used for codebook
-library(dplyr, warn.conflicts = FALSE) #used for codebook
-library(haven) #used for codebook
+Installing tidyverse for formatting:
+```{r echo = T, results = 'hide', warning=FALSE,message=FALSE}
+if (!require(tidyverse)){
+  install.packages("tidyverse", dependencies = TRUE)
+  library(tidyverse)
+}
+```
+Installing dply for formatting:
+```{r echo = T, results = 'hide', warning=FALSE, message=FALSE}
+if (!require(dplyr)){
+  install.packages("dplyr", dependencies = TRUE)
+  library(dplyr)
+}
+```
+Installing summarytools for formatting:
+```{r echo = T, results = 'hide', warning=FALSE, message=FALSE}
+if (!require(summarytools)){
+  install.packages("summarytools", dependencies = TRUE)
+  library(summarytools)
+}
+```
+Installing ggplot2 for plotting:
+```{r echo = T, results = 'hide', warning=FALSE, message=FALSE}
+if (!require(ggplot2)){
+  install.packages("ggplot2", dependencies = TRUE)
+  library(ggplot2)
+}
+```
+Installing GGally for plotting:
+```{r echo = T, results = 'hide', warning=FALSE, message=FALSE}
+if (!require(GGally)){
+  install.packages("GGally", dependencies = TRUE)
+  library(GGally)
+}
+```
+Installing GridExtra for formatting:
+```{r echo = T, results = 'hide', warning=FALSE, message=FALSE}
+if (!require(gridExtra)){
+  install.packages("gridExtra", dependencies = TRUE)
+  library(gridExtra)
+}
 ```
 
 ## Context:
@@ -44,13 +81,13 @@ A dataset has been chosen with the aim of creating a supervised ML model for cla
 The first 6 groups are covered by this dataset. Birds belonging to different ecological groups have different appearances: flying birds have strong wings and wading birds have long legs. Their living habits are somewhat reflected in their bones' shapes. We may think of examining the underlying relationship between sizes of bones and ecological groups , and recognizing birds's ecological groups by their bone structure.
 
 ## Status of data
-The dataset comes from kaggle (https://www.kaggle.com/datasets/zhangjuefei/birds-bones-and-living-habits). It is made up of measurements of bird skeletons from collections of the Natural History Museum of Los Angeles County (data provided by Dr. D. Liu of Beijing Museum of Natural History). It is a 420x10 size continuous values unbalanced multi-class dataset, meaning there are 420 birds contained in this dataset, each bird is represented by 10 measurements (features):
+The dataset comes from Kaggle (https://www.kaggle.com/datasets/zhangjuefei/birds-bones-and-living-habits). It is made up of measurements of bird skeletons from collections of the Natural History Museum of Los Angeles County (data provided by Dr. D. Liu of Beijing Museum of Natural History). It is a 420x10 size continuous values unbalanced multi-class dataset, meaning there are 420 birds contained in this dataset, each bird is represented by 10 measurements (features):
 
-- Huml and Humw: Length and Diameter of Humerus;
-- Ulnal and Ulnaw: Length and Diameter of Ulna;
-- Feml and Femw: Length and Diameter of Femur;
-- Tibl and Tilw: Length and Diameter of Tibiotarsus;
-- Tarl and Tarw: Length and Diameter of Tarsometatarsus.
+- Huml and Humw: Length and Width of Humerus;
+- Ulnal and Ulnaw: Length and Width of Ulna;
+- Feml and Femw: Length and Width of Femur;
+- Tibl and Tilw: Length and Width of Tibiotarsus;
+- Tarl and Tarw: Length and Width of Tarsometatarsus.
 
 The class attribute is "type", referring to the ecological group. The bird skeletons belong to 21 orders, 153 genera, 245 species. Each bird has a label for its ecological group:
 
@@ -62,37 +99,35 @@ The class attribute is "type", referring to the ecological group. The bird skele
 - SO: Singing Birds.
 
 ## Data exploration
-Firstly, we need to have an overview of our data. Pictured below is a summary of the dataset:
+We will load our data into R, making sure to separate by commas. 
+
 ```{r}
 #load the data
 bird_data <- read.table('bird.csv', sep=",", header = 1)
 ```
 
-Pictured below is a codebook with all the relevant information;
+Firstly, we need to have an overview of our data. Pictured below is a summary of the dataset:
+
 ```{r}
-codebook <- readr::read_delim("bird.csv", delim = ",", show_col_types = F)
-pander::pander(codebook[, 1:11], style = "rmarkdown")
+bird_data %>% 
+  select (huml, humw, ulnal, ulnaw, feml, femw, tibl, tibw, tarl, 
+          tarw, type) -> overview
+print(dfSummary(overview, graph.magnif = .75, method = "render"))
 ```
 
-A first look shows a wide range of sizes and just a few missing values. The significance of these entries must be checked.
-```{r}
-#checking total NA's in dataset
-sum(is.na(bird_data))
-```
-There are 15 missing values. Let's see which birds those values are attatched to;
-
+There are 15 missing values. Let's see which birds those values are attached to;
 ```{r}
 #checking which types of birds have missing data
 missing_data_type <- bird_data$type[apply(is.na(bird_data), 1, any)]
 missing_data_type
 ```
 
-So there are a total of 7 birds with missing values. This means there are a total 420 entries with 15 missing values spread across 7 birds. The missing values are the measurements of certain bones but none of the main attribute data; "type", is missing. Apparently there are a few birds with "missing bones". This means a choice must be made to discard the missing data or perform imputation, which means replacing the missing data with substitutions. However 7 out of 420 means the observations with missing values account for less than 2% of the dataset, and may be insignificant enough to remove entirely. Let's also think about why the data is missing; is it significant to specific types of birds or is the data quite random? 
+So there are a total of 7 birds with missing values. This means there are a total 420 entries with 15 missing values spread across 7 birds. The missing values are the measurements of certain bones but none of the main attribute data; "type", is missing. Apparently there are a few birds with "missing bones". This means a choice must be made to discard the missing data or perform imputation, which means replacing the missing data with substitutions. However 7 out of 420 means the observations with missing values account for less than 3% of the dataset, and may be insignificant enough to remove entirely. Let's also think about why the data is missing; is it significant to specific types of birds or is the data quite random? 
 
 These missing values are most likely field data that was not properly formatted into the csv file. Since the SO (songbirds) are over represented in the data, it seems fine to remove the entries with missing values. The missing values also have no real meaning, since every bird is supposed to have the same amount of bones, which means the missing values are just bones that were not measured.
 
 ## Cleaning dataset
-The 7 missing values and the id column shall be removed and a new CSV file will be created. This will be the clean dataset with which we will perform machine learning. 
+The missing values and the id column shall be removed and a new CSV file will be created. This will be the clean dataset with which we will perform machine learning. 
 ```{r}
 #remove the ID's and NA's
 clean_bird_data <- na.omit(bird_data)
@@ -116,7 +151,7 @@ ggplot(clean_bird_data, aes(x = type)) + geom_bar(fill = "black") +
 On a glance we can already see that the distribution is not equal, it is seemingly all over the place. There is an over representation of songbirds (SO) and Swimming birds (SW). Terrestrial birds (T) are the group with the least instances. Wading birds (W), Raptos (R) and Scansorial birds (P) are somewhere in between. The 6 classes are not equally distributed. To remedy this, we may double the lowest group or half the biggest group if the training models are insufficiently trained. For now though, we shall use the dataset as is without any further changes. 
 
 ## Variation and distributions 
-To check the distribution of the data we can make boxplots of bonetypes for each type of bird. We want to look for outliers in each type. 
+To check the distribution of the data we can make boxplots of bone types for each type of bird. We want to look for outliers in each type. 
 ```{r warning=FALSE}
 #boxplot of all bonemeasurements
 p1 <- ggplot(clean_bird_data, aes(x = type, y = huml)) + geom_boxplot() 
@@ -129,11 +164,11 @@ p7 <- ggplot(clean_bird_data, aes(x = type, y = tibl)) + geom_boxplot()
 p8 <- ggplot(clean_bird_data, aes(x = type, y = tibw)) + geom_boxplot() 
 p9 <- ggplot(clean_bird_data, aes(x = type, y = tarl)) + geom_boxplot()
 p10 <- ggplot(clean_bird_data, aes(x = type, y = tarw)) + geom_boxplot()
-grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, nrow = 2)
+grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, 
+             p10, nrow = 3, top = "Bone size per type of bird")
 ```
 
 The data seems to have a lot of outliers, to see whether or not this is relevant we can do a log transformation to check the significance.
-
 
 ```{r warning=FALSE}
 #logtransformed boxplot of all bonemeasurements  
@@ -158,25 +193,25 @@ plog9 <- ggplot(clean_bird_data, aes(y = tarl,x = type)) + geom_boxplot() +
 plog10 <-ggplot(clean_bird_data, aes(y = tarw,x = type)) + geom_boxplot() + 
   scale_y_continuous(trans = "log10")
 grid.arrange(plog1, plog2, plog3, plog4, plog5, plog6, plog7, plog8, plog9,
-             plog10, nrow = 2)
+             plog10, nrow = 3, 
+             top = "Logtransformed bone size per type of bird")
 ```
 
 Most outliers of the SW group have been removed entirely. There are still plenty of outliers in T group, but since it's the smallest group no instances shall be removed. It is safe to assume that the outliers are actually just bigger and smaller birds. From now on we can assume the outliers are not significant enough to be removed and thus the regular dataset will be used for machine learning. This data can be used for trees, but if these algorithms prove insufficient, logtransformed data may be used for Naive Bayes.
 
-How can we see if a variable is informative for machine learning? To find out, we will perform an ANOVA on each bone type per bird type and sort the p-values. This will help us determine the most useful values for prediction, even though the distribution it is scewed. (can use t-values as well to order it)
+How can we see if a variable is informative for machine learning? To find out, we will perform an ANOVA on each bone type per bird type and sort the p-values. This will help us determine the most useful values for prediction, even though the distribution it is scewed. (can use t-values as well to order it, highest difference tells us....what?)
+
 ```{r}
-#aov.models = clean_bird_data[ , -grep("type", names(clean_bird_data))] %>%
-#  map(~ aov(clean_bird_data$type ~ .x))
+# Group the data by Species and select numeric columns
+
 ```
 
 !!!is een variable informatief voor ml? zoek het uit; annova doen op elke bot type PER type vogel. Op p-waarden sorteren. helpful voor trees. Ordenen bij meest en minst verschillende waardes. 
 
-
-
 ## Correlation 
 Before checking, the logical assumption would be that the data is highly correlated, since all birds have similar bone structures and the birds within a specific type are going to look even more similar. To be sure, however, we can use a scatterplot to visualize the distribution of the bone sizes and the relationship between them. 
 
-```{r, figures-side, fig.show="hold", out.width="50%", warning=FALSE}
+```{r, figures-side, fig.show="hold", out.width="50%", warning=FALSE, message=FALSE}
 #create a scatterplot of the bone lengths and widths. 
 ggplot(clean_bird_data,aes(x=huml,y=humw,color=type))+geom_point()+
   geom_smooth()
@@ -192,7 +227,6 @@ ggplot(clean_bird_data,aes(x=tarl,y=tarw,color=type))+geom_point()+
 The scatterplot suggest that there is a correlation between bird types and their bone structures. We can also look at a correlation matrix to see precisely how highly correlated our data is:
 
 ```{r, warning=FALSE}
-#correlation matrix (start from 2 because id has not been removed yet)
 ggcorr(clean_bird_data, label = TRUE)
 ```
 
@@ -312,7 +346,6 @@ Selected attributes: 1,2,3,5,6,7,9,10 : 8
 For Wrapper subset evaluator + exhaustive search it seems huml and humw are the highest scoring. 
 
 Overall it seems the length and width of the humerus and ulna are the most significant measurements for accurate classification of bird groups. These bones are located in the sings of the bird. It makes sense that wingspan would determine the group that the bird belongs to. Lagging behind in ranking are the femur and tibiotarsus bones, which are located in the legs of the bird. 
-
 
 ## stappenplan 
 OneRattribute
