@@ -230,7 +230,7 @@ The scatterplot suggest that there is a correlation between bird types and their
 ggcorr(clean_bird_data, label = TRUE)
 ```
 
-Unsurprisingly the correlation matrix also gave us a large positive correlation between all our measurements. This is of course because when birds get bigger, so do their bone measurements. The swimming birds (SW), however, seem a lot bigger than the others. It makes sense that SW has a lot of different measurements because big birds, like swans, and small birds, like coots, are both classified as swimming birds. Since the correlation between different bird species is so high, classification could prove difficult. We need to keep this in mind when choosing out model. 
+Unsurprisingly the correlation matrix also gave us a large positive correlation between all our measurements. This is of course because when birds get bigger, so do their bone measurements. The swimming birds (SW), however, seem a lot bigger than the others. It makes sense that SW has a lot of different measurements because big birds, like swans, and small birds, like coots, are both classified as swimming birds. Since the correlation between different bone measurements is so high, classification could prove difficult. We need to keep this in mind when choosing our model. 
 
 ## Research Question 
 Based on the exploratory data analysis the research question will be: Using machine learning algorithms, which bone measurements are most informative for classifying birds into ecological groups?
@@ -242,10 +242,19 @@ And so the alternative hypothesis: There is a significant relationship between b
 # Week 4
 
 ## Quality metrics 
-To assess the performance of our algorithm there are a few metrics that are commonly used; accuracy, speed, precision/recall and F1-score. Nearly all these values can be recorded in a confusion matrix. For our project, accuracy is the most important metric to assess the quality of the algorithm. Speed is not a metric that is important for this relatively low amount of data. 
+To assess the performance of our algorithm there are a few metrics that are commonly used: 
+- Accuracy/error rate: measures the ratio of correct/incorrect prediction to the total number of predictions, giving us an idea how often the model is correct;
+- Precision/recall: measures the accuracy of positive predictions. Important to determine true positives and false positives rate;
+- F1 score: mean of precision/recall. Useful for we want to give equal consideration to both true positives and false negatives;
+- Specificity: measures true negative rate. Used when true negatives are crucial to know.
+- Confusion matrix: used to present a breakdown of true positive, true negative, false positive and false negative counts. 
+- ROC curve: A curve showing models performance across thresholds. Helps visualize trade-off between true positive rate and false positive rate.
+- speed: the speed with which an algorithm can make predictions. 
+
+We will use a confusion matrix to showcase our most important metrics. The one metric that seems specifically useful for unbalanced datasets is F1 score, this will be shown separately. Speed is not a metric that is important for this relatively low amount of data. We are also uninterested in specificity, because true negatives are not a crucial part of knowing what bone measurements are effective for determining species type. 
 
 ## Machine learning in wekka
-Considering our dataset is highly imbalanced, we can already guess that trees will perform better than any other algorithms. Regardless, the selection of machine learning models has been made to cover to include representatives of all classifier categories:
+Considering our dataset is highly imbalanced we can already guess that algorithms that don't rely on balancing, like trees or boosting algorithms, will perform better than those that do. Regardless, the selection of machine learning models has been made to cover to include representatives of all classifier categories:
 
 - ZeroR (baseline measurement)
 - oneR (baseline measurement)
@@ -256,7 +265,7 @@ Considering our dataset is highly imbalanced, we can already guess that trees wi
 - Simple Logistic Regression
 - Random forest
 
-Some of these algorithms, like Naive Bayes,  will not work well with imbalanced datasets. We could fix this by either under- or oversampling our dataset, but the remaining algorithms like trees and logistic regression are known to perform better on imbalanced datasets. First we will compare all the algorithms and their default values in Wekka with the clean dataset using Wekka experimenter. 
+First we will compare all the algorithms and their default values in Wekka with the clean dataset using Wekka experimenter. 
 
 ```{r}
 wekka_default <- read.csv("wekka_exp_default.csv", header=T)
@@ -264,99 +273,153 @@ results_default <- aggregate(wekka_default$Percent_correct, list(wekka_default$K
 colnames(results_default) <- c("algorithm", "percentage correct")
 results_default
 ```
+All the chosen algorithms scored higher than ZeroR and OneR. The most promising results come from the K-Nearest Neighbor (89.16% correct), Simple logistic (85.24% correct) and the Random Forest (84.54% correct) algorithm. The hyper parameters shall be adjusted to see if the accuracy can be heightened. KNN scoring above RandomForest is suspicious, especially since the data is highly correlated. This means KNN might be overfitted on default values, so we shall adjust that. 
 
-All the chosen algorithms scored higher than ZeroR and OneR. The most promising results come from the K-Nearest Neighbor (89.16% correct), Simple logistic (85.24% correct) and the Random Forest (84.54% correct) algorithm. We will use these for further analysis. 
+We will set KNN to 5 instead of 1 and the distanceWeighing = weight by 1/distance instead. We will change the J48 tree to unpruned = True instead of unpruned = False. Naive Bayes will be removed because of the nature of the dataset. For SMO linear regression was used as calibrator. 
+
+```{r}
+#wekka_adjust <- read.csv("wekka_exp_adjusted.arff", header=T, comment.char = "@")
+#results_adjust <- aggregate(wekka_adjust$Percent_correct, list(wekka_adjust$Key_Scheme), mean)
+#colnames(results_adjust) <- c("algorithm", "percentage correct")
+#results_adjust
+```
+
+The results show that simpleLogistic and RandomForest come out on top again. The KNN algorithm has significant decreased performance. J48 tree also has a decrease after adjustment. SMO has remained the same. The two algorithms that will be used for further analysis are simpleLogic and RandomForest.
 
 # Week 5 
 
 ## Attribute selection
-Loading in the clean dataset, we use the Wekka Explorer to select attributes. WE mix attribute evaluators with 
-=== Attribute Selection on all input data ===
+Loading in the cleaned dataset, we use the Wekka Explorer to select attributes. We mix and match different search methods with attribute evaluators to find the commonly highest ranking attributes, these will be used in our final model.
 
-Search Method:
-	Attribute ranking.
+=== 1. OneR evaluator + Attribute Ranking settings ===
 
-Attribute Evaluator (supervised, Class (nominal): 11 type):
-	OneR feature evaluator.
+- Using clean_bird_data as input.
+- Search Method: Attribute ranking.
 
-	Using 10 fold cross validation for evaluating attributes.
-	Minimum bucket size for OneR: 6
+- Attribute Evaluator (supervised, Class (nominal): 11 type): OneR feature evaluator.
+- Using 10 fold cross validation for evaluating attributes.
+- Minimum bucket size for OneR: 6
 
-Ranked attributes:
-54.9637   1 huml
-53.0266   4 ulnaw
-52.7845   2 humw
-51.3317   3 ulnal
-49.6368   7 tibl
-47.6998  10 tarw
-47.6998   5 feml
-46.4891   8 tibw
-44.7942   6 femw
-42.8571   9 tarl
+```{r table1, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
+tabl <- "
+|Accuracy | Attribute  |
+|:-------:|:---------: |
+|54.9637  | 1 huml     |
+|53.0266  | 4 ulnaw    |
+|52.7845  | 2 humw     |
+|51.3317  | 3 ulnal    |
+|49.6368  | 7 tibl     |
+|47.6998  | 10 tarw    |
+|47.6998  | 5 feml     |
+|46.4891  | 8 tibw     |
+|44.7942  | 6 femw     |
+|42.8571  | 9 tarl     |
+"
+cat(tabl) 
+```
 
-For the one OneR feature evaluator + ranker method it seems huml and ulnaw is the highest scoring attribute.  
+For the one OneR feature evaluator + ranker method it seems huml and ulnaw is the highest scoring attribute. 
 
+=== 2. CFS subset Evaluator + Exhaustive Search settings ===
 
-=== Attribute Selection on all input data ===
-Search Method:
-	Exhaustive Search.
-	Start set: no attributes
-	Number of evaluations: 1024
-	Merit of best subset found:    0.427
+- Search Method: Exhaustive Search.
+- Start set: no attributes
+-	Number of evaluations: 1024
+-	Merit of best subset found:    0.427
 
-Attribute Subset Evaluator (supervised, Class (nominal): 11 type):
-	CFS Subset Evaluator
-	Including locally predictive attributes
-
-Selected attributes: 1,3,4,10 : 4
-                     huml
-                     ulnal
-                     ulnaw
-                     tarw
+- Attribute Subset Evaluator (supervised, Class (nominal): 11 type):
+- CFS Subset Evaluator
+- Including locally predictive attributes
+                     
+```{r table2, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
+tabl2 <- "
+| Attribute  |
+|:---------: |
+| huml       |
+| ulnal      |
+| ulnaw      |
+| tarw       |
+"
+cat(tabl2) 
+```
+- Selected attributes: 1,3,4,10 : 4
 
 For CFS subset evaluator + exhaustive search method again it seems huml and unlal are highest scoring.
 
 
-=== Attribute Selection on all input data ===
+=== 3. Wrapper Subset Evaluate + Exhaustive Search ===
 
-Search Method:
-	Exhaustive Search.
-	Start set: no attributes
-	Number of evaluations: 1024
-	Merit of best subset found:    0.897
+- Exhaustive Search.
+- Start set: no attributes
+- Number of evaluations: 1024
+- Merit of best subset found:    0.897
 
-Attribute Subset Evaluator (supervised, Class (nominal): 11 type):
-	Wrapper Subset Evaluator
-	Learning scheme: weka.classifiers.lazy.IBk
-	Scheme options: -K 1 -W 0 -A weka.core.neighboursearch.LinearNNSearch -A "weka.core.EuclideanDistance -R first-last" 
-	Subset evaluation: classification accuracy
-	Number of folds for accuracy estimation: 5
+- Attribute Subset Evaluator (supervised, Class (nominal): 11 type):
+- Wrapper Subset Evaluator
+- Learning scheme: weka.classifiers.lazy.IBk
+- Scheme options: -K 1 -W 0 -A weka.core.neighboursearch.LinearNNSearch -A "weka.core.EuclideanDistance -R first-last" 
+- Subset evaluation: classification accuracy
+- Number of folds for accuracy estimation: 5
+
+```{r table3, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
+tabl3 <- "
+| Attribute  |
+|:---------: |
+| huml       |
+| humw       |
+| ulnal      |
+| feml       |
+| femw       |
+| tibl       |
+| tarl       |
+| tarw       |
+"
+cat(tabl3) 
+```
+
+- Selected attributes: 1,2,3,5,6,7,9,10 : 8
+
+For Wrapper subset evaluate + exhaustive search it seems huml and humw are the highest scoring. 
+
+Overall it seems the length and width of the humerus and ulna are the most significant measurements for accurate classification of bird groups. These bones are located in the wings of the bird. It makes sense that wingspan would determine the group that the bird belongs to. Lagging behind in ranking are the femur and tibiotarsus bones, which are located in the legs of the bird. The humerus and ulna values will therefor be used for further analysis. 
+
+## ROC curve 
+To find the ROC curve we load our dataset into Wekka and go to the explorer, there we can go into the classify menu and use Logistic classifier and visualise the threshold curve. We do this for every attribute. Pictured below are the values for the RandomForest algorithm
 
 
-Selected attributes: 1,2,3,5,6,7,9,10 : 8
-                     huml
-                     humw
-                     ulnal
-                     feml
-                     femw
-                     tibl
-                     tarl
-                     tarw
+Correctly Classified Instances         351               84.9879 %
+Incorrectly Classified Instances        62               15.0121 %
+Kappa statistic                          0.8061
+Mean absolute error                      0.1015
+Root mean squared error                  0.2051
+Relative absolute error                 38.9129 %
+Root relative squared error             56.8004 %
+Total Number of Instances              413     
 
-For Wrapper subset evaluator + exhaustive search it seems huml and humw are the highest scoring. 
+=== Detailed Accuracy By Class ===
 
-Overall it seems the length and width of the humerus and ulna are the most significant measurements for accurate classification of bird groups. These bones are located in the sings of the bird. It makes sense that wingspan would determine the group that the bird belongs to. Lagging behind in ranking are the femur and tibiotarsus bones, which are located in the legs of the bird. 
+                 TP Rate  FP Rate  Precision  Recall   F-Measure  MCC      ROC Area  PRC Area  Class
+                 0,888    0,077    0,817      0,888    0,851      0,791    0,967     0,935     SW
+                 0,547    0,011    0,897      0,547    0,680      0,663    0,949     0,809     W
+                 0,609    0,008    0,824      0,609    0,700      0,694    0,943     0,762     T
+                 0,917    0,030    0,800      0,917    0,854      0,836    0,989     0,909     R
+                 0,842    0,021    0,800      0,842    0,821      0,802    0,953     0,837     P
+                 0,992    0,045    0,904      0,992    0,946      0,924    0,992     0,982     SO
+Weighted Avg.    0,850    0,043    0,853      0,850    0,842      0,812    0,972     0,908     
 
-## stappenplan 
-OneRattribute
-Ranker + gainratio 
+=== Confusion Matrix ===
 
-CFs subset evaluator
-met groepjes ranken 
-zeggen veel over classe maar onderling verschillend. 
+   a   b   c   d   e   f   <-- classified as
+ 103   4   1   3   0   5 |   a = SW
+  17  35   1   3   5   3 |   b = W
+   2   0  14   2   3   2 |   c = T
+   4   0   0  44   0   0 |   d = R
+   0   0   1   2  32   3 |   e = P
+   0   0   0   1   0 123 |   f = SO
 
-CfssubsetEval met ExhaustiveSearch
-                     
+(screenshotje toevoegen curve TP en FP rate)
+
+## Stappenplan
 gooi bij je data alles eruit hevalve huml, save het als arff  file
 ga naar experimenter, set nieuw experiment op, gooi alle data erin, cleaned, en single variables, en 1 variable
 add new -> zeroR, Naivebayes, Classificationviaclustering (simpleKmeans), simplelogistic, forrest
@@ -371,5 +434,4 @@ cfs
 wrapper 
 CorrelationAttributeEVal no class
 
-wekka true positive rate and false positive rate plotten ROC curve (kan ook screenshotje toevoegen in R)
  
