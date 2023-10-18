@@ -67,7 +67,7 @@ if (!require(gridExtra)){
 ```
 
 ## Context:
-A dataset has been chosen with the aim of creating a supervised ML model for classification. We picked a dataset on bird classification by bonestructure. There are different types of birds, ranging from flying, to swimming, to running birds. For this dataset, birds have been classified into ecological groups according to their habitats. There are 8 ecological groups of birds:
+A dataset has been chosen with the aim of creating a supervised ML model for classification. We picked a dataset on bird classification by bone structure. There are different types of birds, ranging from flying, to swimming, to running birds. For this dataset, birds have been classified into ecological groups according to their habitats. There are 8 ecological groups of birds:
 
 - Swimming Birds;
 - Wading Birds;
@@ -78,7 +78,7 @@ A dataset has been chosen with the aim of creating a supervised ML model for cla
 - Cursorial Birds (not included in dataset);
 - Marine Birds (not included in dataset).
 
-The first 6 groups are covered by this dataset. Birds belonging to different ecological groups have different appearances: flying birds have strong wings and wading birds have long legs. Their living habits are somewhat reflected in their bones' shapes. We may think of examining the underlying relationship between sizes of bones and ecological groups , and recognizing birds's ecological groups by their bone structure.
+The first 6 groups are covered by this dataset. Birds belonging to different ecological groups have different appearances: flying birds have strong wings and wading birds have long legs. Their living habits are somewhat reflected in their bones' shapes. We may think of examining the underlying relationship between sizes of bones and ecological groups , and recognizing bird's ecological groups by their bone structure.
 
 ## Status of data
 The dataset comes from Kaggle (https://www.kaggle.com/datasets/zhangjuefei/birds-bones-and-living-habits). It is made up of measurements of bird skeletons from collections of the Natural History Museum of Los Angeles County (data provided by Dr. D. Liu of Beijing Museum of Natural History). It is a 420x10 size continuous values unbalanced multi-class dataset, meaning there are 420 birds contained in this dataset, each bird is represented by 10 measurements (features):
@@ -168,7 +168,7 @@ grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9,
              p10, nrow = 3, top = "Bone size per type of bird")
 ```
 
-The data seems to have a lot of outliers, to see whether or not this is relevant we can do a log transformation to check the significance.
+The data seems to have a lot of outliers, to see whether or not this is relevant we can do a log transformation to check the significance. Usually this will not be done 
 
 ```{r warning=FALSE}
 #logtransformed boxplot of all bonemeasurements  
@@ -284,7 +284,41 @@ We will set KNN to 5 instead of 1 and the distanceWeighing = weight by 1/distanc
 #results_adjust
 ```
 
-The results show that simpleLogistic and RandomForest come out on top again. The KNN algorithm has significant decreased performance. J48 tree also has a decrease after adjustment. SMO has remained the same. The two algorithms that will be used for further analysis are simpleLogic and RandomForest.
+The results show that simpleLogistic and RandomForest come out on top again. The KNN algorithm has significant decreased performance. J48 tree also has a decrease after adjustment. SMO has remained the same. The two algorithms that will be used for further analysis are KNN, simpleLogic and RandomForest.
+
+
+With the wekka experimenter, in the wekka classifier, we checked for overfitting using 10-fold crossvalidation. 
+-input:clean_bird_dataset
+- 100 repetitions 
+- CVParameterSelection
+- CVparameters(input: K 1.0 10.0 10.0)
+=== Classifier model (full training set) ===
+
+Cross-validated Parameter selection.
+Classifier: weka.classifiers.lazy.IBk
+Cross-validation Parameter: '-K' ranged from 1.0 to 10.0 with 10.0 steps
+
+Classifier Options: -K 1 -W 0 -A "weka.core.neighboursearch.LinearNNSearch -A \"weka.core.EuclideanDistance -R first-last\""
+
+IB1 instance-based classifier
+using 1 nearest neighbour(s) for classification
+
+
+Time taken to build model: 0.1 seconds
+
+=== Stratified cross-validation ===
+=== Summary ===
+
+Correctly Classified Instances         366               88.6199 %
+Incorrectly Classified Instances        47               11.3801 %
+Kappa statistic                          0.854 
+Mean absolute error                      0.0417
+Root mean squared error                  0.1933
+Relative absolute error                 15.9984 %
+Root relative squared error             53.5419 %
+Total Number of Instances          
+
+Using the experimenter we determined that KNN was not overfitted. Thus this is the model that shall be used 
 
 # Week 5 
 
