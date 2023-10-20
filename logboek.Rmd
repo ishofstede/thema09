@@ -65,6 +65,13 @@ if (!require(gridExtra)){
   library(gridExtra)
 }
 ```
+Installing Rweka for plotting ROC curve:
+```{r echo = T, results = 'hide', warning=FALSE, message=FALSE}
+if (!require(RWeka)){
+  install.packages("RWeka", dependencies = TRUE)
+  library(RWeka)
+}
+```
 
 ## Context:
 A dataset has been chosen with the aim of creating a supervised ML model for classification. We picked a dataset on bird classification by bone structure. There are different types of birds, ranging from flying, to swimming, to running birds. For this dataset, birds have been classified into ecological groups according to their habitats. There are 8 ecological groups of birds:
@@ -253,7 +260,8 @@ To assess the performance of our algorithm there are a few metrics that are comm
 
 We will use a confusion matrix to showcase our most important metrics. The one metric that seems specifically useful for unbalanced datasets is F1 score, this will be shown separately. Speed is not a metric that is important for this relatively low amount of data. We are also uninterested in specificity, because true negatives are not a crucial part of knowing what bone measurements are effective for determining species type. 
 
-## Machine learning in wekka
+
+## Machine learning in weka
 Considering our dataset is highly imbalanced we can already guess that algorithms that don't rely on balancing, like trees or boosting algorithms, will perform better than those that do. Regardless, the selection of machine learning models has been made to cover to include representatives of all classifier categories:
 
 - ZeroR (baseline measurement)
@@ -265,73 +273,65 @@ Considering our dataset is highly imbalanced we can already guess that algorithm
 - Simple Logistic Regression
 - Random forest
 
-First we will compare all the algorithms and their default values in Wekka with the clean dataset using Wekka experimenter. 
+First we will compare all the algorithms with their default values in weka using the clean dataset in the weka experimenter. For settings, we use 10-fold cross validation with 100 repetitions.
 
 ```{r}
-wekka_default <- read.csv("wekka_exp_default.csv", header=T)
-results_default <- aggregate(wekka_default$Percent_correct, list(wekka_default$Key_Scheme), mean)
+weka_default <- read.csv("weka_exp_default.csv", header=T)
+results_default <- aggregate(weka_default$Percent_correct, list(weka_default$Key_Scheme), mean)
 colnames(results_default) <- c("algorithm", "percentage correct")
 results_default
 ```
-All the chosen algorithms scored higher than ZeroR and OneR. The most promising results come from the K-Nearest Neighbor (89.16% correct), Simple logistic (85.24% correct) and the Random Forest (84.54% correct) algorithm. The hyper parameters shall be adjusted to see if the accuracy can be heightened. KNN scoring above RandomForest is suspicious, especially since the data is highly correlated. This means KNN might be overfitted on default values, so we shall adjust that. All other algorithms below 70% will be removed. 
+All the chosen algorithms scored higher than ZeroR and OneR. The most promising results come from the K-Nearest Neighbor (89.16% correct), Simple logistic (85.24% correct) and the Random Forest (84.54% correct) algorithm. The hyper parameters shall be adjusted to see if the accuracy can be heightened. KNN scoring above RandomForest is suspicious, especially since the data is highly correlated. This means KNN might be overfitted on default values, so we shall adjust that by using k = log(number of samples) meaning log(4620) = 3.66 -> k = 4 but because KNN is inherently overfitted we can use a slightly lower threshold, we choose k = 3. As for SimpleLogistic, the optimal number of LogitBoost iterations to perform is cross-validated, which leads to automatic attribute selection. Because of this we shall not adjust the parameters for LogitBoost All other algorithms below 80% will be removed. 
 
 Adjustments KNN:
-- set KNN to 5 instead of 1
-- distanceWeighing = weight by 1/distance instead. 
-Adjustments J48:
-- set tree to unpruned = True
+- set KNN to 3 instead of 1.
 Adjustments SMO:
 - linear regression was used as calibrator. 
+Adjustments RandomForest:
+- set depth to 10.
 
 The results are as follows:
 ```{r}
-#wekka_adjust <- read.csv("wekka_exp_adjusted.arff", header=T, comment.char = "@")
+#weka_adjust <- read.csv("weka_exp_adjusted.arff", header=T, comment.char = "@")
 #colnames()
-#results_adjust <- aggregate(wekka_adjust$Percent_correct, list(wekka_adjust$Key_Scheme), mean)
+#results_adjust <- aggregate(weka_adjust$Percent_correct, list(weka_adjust$Key_Scheme), mean)
 #colnames(results_adjust) <- c("algorithm", "percentage correct")
 #results_adjust
 ```
 
-SimpleLogistic and RandomForest come out on top again. The KNN algorithm and J48 tree have recieved a significant decreased performance.  SMO has remained the same. The algorithms that will be used for further analysis are KNN and RandomForest.
+Dataset                   (1) function | (2) lazy. (3) trees
+------------------------------------------------------------
+bird_clean               (1000   84.98 |   80.97     84.47  
+------------------------------------------------------------
+                               (v/ /*) |   (0/1/0)   (0/1/0)
 
-With the wekka experimenter, in the wekka classifier, we checked for overfitting using 10-fold crossvalidation. 
--input:clean_bird_dataset
-- 100 repetitions 
-- CVParameterSelection
-- CVparameters(input: K 1.0 10.0 10.0)
+Key:
+(1) functions.SimpleLogistic '-I 0 -M 500 -H 50 -W 0.0' 7397710626304705059
+(2) lazy.IBk '-K 3 -W 0 -A \"weka.core.neighboursearch.LinearNNSearch -A \\\"weka.core.EuclideanDistance -R first-last\\\"\"' -3080186098777067172
+(3) trees.RandomForest '-P 100 -I 100 -num-slots 1 -K 0 -M 1.0 -V 0.001 -S 1' 1116839470751428698
 
-=== Classifier model (full training set) ===
+Using the experimenter we determined that KNN without overfitting decreased in accuracy. Any parameters that are adjusted in the RandomForest. LogitBoost seems to be the perfect best fitting model for our dataset. Next we shall determine the most significant attribute to be used with our model. 
 
-Cross-validated Parameter selection.
-Classifier: weka.classifiers.lazy.IBk
-Cross-validation Parameter: '-K' ranged from 1.0 to 10.0 with 10.0 steps
+## ROC curve 
+To find the ROC curve we load our dataset into weka and go to the explorer, there we can go into the classify menu and use Logistic classifier to visualize the threshold curve. We do this for every attribute. Pictured below are the values for the KNN algorithm:
 
-Classifier Options: -K 1 -W 0 -A "weka.core.neighboursearch.LinearNNSearch -A \"weka.core.EuclideanDistance -R first-last\""
-
-IB1 instance-based classifier
-using 1 nearest neighbour(s) for classification
-
-
-Time taken to build model: 0.1 seconds
-
-=== Stratified cross-validation ===
-=== Summary ===
-
-Correctly Classified Instances         366               88.6199 %
-Incorrectly Classified Instances        47               11.3801 %
-Kappa statistic                          0.854 
-Mean absolute error                      0.0417
-Root mean squared error                  0.1933
-Relative absolute error                 15.9984 %
-Root relative squared error             53.5419 %
-Total Number of Instances          
-
-Using the experimenter we determined that KNN was not overfitted. Thus this is the model that shall be used. Next we shall determine the most significant attribute to be used with our model. 
-
-# Week 5 
+```{r curve-side, fig.show="hold", out.width="50%", warning=FALSE, message=FALSE}
+SO_curve <- read.arff("SO_curve.arff")
+P_curve <- read.arff("P_curve.arff")
+W_curve <- read.arff("W_curve.arff")
+R_curve <- read.arff("R_curve.arff")
+SW_curve <- read.arff("SW_curve.arff")
+T_curve <- read.arff("T_curve.arff")
+ggplot(SO_curve, aes(x=`False Positives`, y=`True Positives`)) + geom_line()
+ggplot(P_curve, aes(x=`False Positives`, y=`True Positives`)) + geom_line()
+ggplot(W_curve, aes(x=`False Positives`, y=`True Positives`)) + geom_line()
+ggplot(R_curve, aes(x=`False Positives`, y=`True Positives`)) + geom_line()
+ggplot(SW_curve, aes(x=`False Positives`, y=`True Positives`)) + geom_line()
+ggplot(T_curve, aes(x=`False Positives`, y=`True Positives`)) + geom_line()
+```
 
 ## Attribute selection
-Loading in the cleaned dataset, we use the Wekka Explorer to select attributes. We mix and match different search methods with attribute evaluators to find the commonly highest ranking attributes, these will be used in our final model.
+Loading in the cleaned dataset, we use the weka Explorer to select attributes. We mix and match different search methods with attribute evaluators to find the commonly highest ranking attributes, these will be used in our final model.
 
 === 1. OneR evaluator + Attribute Ranking settings ===
 
@@ -424,15 +424,20 @@ For Wrapper subset evaluate + exhaustive search it seems huml and humw are the h
 
 Overall it seems the length and width of the humerus and ulna are the most significant measurements for accurate classification of bird groups. These bones are located in the wings of the bird. It makes sense that wingspan would determine the group that the bird belongs to. Lagging behind in ranking are the femur and tibiotarsus bones, which are located in the legs of the bird. All variables however, lie above the 40% accuracy. Which is certainly not insignificant. We will experiment with removing multiple variables from our models and see if the final model's accuracy will improve. 
 
-## ROC curve 
-To find the ROC curve we load our dataset into Wekka and go to the explorer, there we can go into the classify menu and use Logistic classifier to visualize the threshold curve. We do this for every attribute. Pictured below are the values for the KNN and the RandomForest algorithm:
+## Model Adjustments 
+Inside the weka explorer we removed individual attributes, being sure to keep our class attribute. We then save all these new datasets as .csv files. In the experimenter we check which mix of attributes and algorithms produce the best result. we run 100 repetitions and use 10-fold crossvalidation. In the comparison field we can check the values. We made multiple datasets with values removed to see which values would affect the accuracy of the dataset. Using the default settings for KNN and RandomForest in the Experimenter. 
 
-## Final model
-For our project we have experimented with removing multiple variables from our dataset. Inside the Wekka explorer we removed individual variables, being sure to keep our class variable. We then save all these datasets as .csv files. In the experimenter we check which mix of attributes and algorithms produce the best result. we run 100 repetitions and use 10-fold crossvalidation. In the comparison field we can check the values. 
+Used datasets: 
+1. bird_huml: contains only class attribute and huml attribute.
+2. bird_huml_ulna_feml: contains only class attribute type and attributes  huml, ulna and feml. 
+3. bird_huml_rm_ tarl_feml: contains class attribute type and removed attributes tarl and feml.
+4. bird_huml_rm_tarl_femw_tibw: contains class attribute type and removed attributes tarl, femw and tibw.
+5. bird_huml_rm_tarl: contains class attribute type and removed tarl.
+6. bird_clean: contains all attributes. 
 
-Settings: 
-1. lazy.IBk '-K 1 -W 0 -I -A \"weka.core.neighboursearch.LinearNNSearch -A \\\"weka.core.EuclideanDistance -R first-last\\\"\"' -3080186098777067172
-2. trees.RandomForest '-P 100 -I 100 -num-slots 1 -K 0 -M 1.0 -V 0.001 -S 1' 1116839470751428698
+Used Settings: 
+1. lazy.IBk default 
+2. trees.RandomForest default 
 
 Dataset                   (1) lazy.IBk | (2) trees
 --------------------------------------------------
@@ -446,7 +451,4 @@ bird_clean               (1000   89.08 |   84.47 *
 --------------------------------------------------
                                (v/ /*) |   (0/3/4)
 
-
-!!!!!!!!!!!
-The accuracy decreases the more attributes are removed. The only exception being the tarl attibute, for this reason and to speed upu the model, this attribute will be removed from the dataset. KNN scores higher than the RandomForest algorithm. The final model will be KNN with an adusted dataset, having tarl removed. 
-
+The accuracy decreases the more attributes are removed, therefore no attributes shall be removed.
