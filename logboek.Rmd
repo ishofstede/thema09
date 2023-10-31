@@ -11,7 +11,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# week 1
+# Exploratory Data Analysis 
 For the purpose of this project a few packages and libraries will be installed. All of these are for the purpose of either plotting or formatting the data or plots.
 Installing haven for formatting:
 ```{r echo = T, results = 'hide', warning=FALSE, message=FALSE}
@@ -105,7 +105,7 @@ The class attribute is "type", referring to the ecological group. The bird skele
 - P: Scansorial Birds;
 - SO: Singing Birds.
 
-## Data exploration
+## Loading data
 We will load our data into R, making sure to separate by commas. 
 
 ```{r}
@@ -113,6 +113,9 @@ We will load our data into R, making sure to separate by commas.
 bird_data <- read.table('bird.csv', sep=",", header = 1)
 ```
 
+# Univariate analysis 
+
+## Summary statistics 
 Firstly, we need to have an overview of our data. Pictured below is a summary of the dataset:
 
 ```{r}
@@ -126,7 +129,6 @@ There are 15 missing values. Let's see which birds those values are attached to;
 ```{r}
 #checking which types of birds have missing data
 missing_data_type <- bird_data$type[apply(is.na(bird_data), 1, any)]
-missing_data_type
 ```
 
 So there are a total of 7 birds with missing values. This means there are a total 420 entries with 15 missing values spread across 7 birds. The missing values are the measurements of certain bones but none of the main attribute data; "type", is missing. Apparently there are a few birds with "missing bones". This means a choice must be made to discard the missing data or perform imputation, which means replacing the missing data with substitutions. However 7 out of 420 means the observations with missing values account for less than 3% of the dataset, and may be insignificant enough to remove entirely. Let's also think about why the data is missing; is it significant to specific types of birds or is the data quite random? 
@@ -140,7 +142,7 @@ The missing values and the id column shall be removed and a new CSV file will be
 clean_bird_data <- na.omit(bird_data)
 clean_bird_data <- subset(clean_bird_data, select = -id)
 #check if any missing values are left
-colSums(is.na(clean_bird_data))
+#colSums(is.na(clean_bird_data))
 #write the csv file with cleaned dataset. 
 write.csv(clean_bird_data, "bird_clean.csv", row.names = F)
 ```
@@ -149,6 +151,7 @@ All the missing values have been removed and the cleaned data can now be used fo
 
 ## Class distribution 
 We need to check whether or not the data is equally distributed between the types of birds. 
+
 ```{r}
 #create a barchart per species
 ggplot(clean_bird_data, aes(x = type)) + geom_bar(fill = "black") + 
@@ -157,64 +160,59 @@ ggplot(clean_bird_data, aes(x = type)) + geom_bar(fill = "black") +
 
 On a glance we can already see that the distribution is not equal, it is seemingly all over the place. There is an over representation of songbirds (SO) and Swimming birds (SW). Terrestrial birds (T) are the group with the least instances. Wading birds (W), Raptos (R) and Scansorial birds (P) are somewhere in between. The 6 classes are not equally distributed. To remedy this, we may double the lowest group or half the biggest group if the training models are insufficiently trained. For now though, we shall use the dataset as is without any further changes. 
 
+# Bivariate 
 ## Variation and distributions 
 To check the distribution of the data we can make boxplots of bone types for each type of bird. We want to look for outliers in each type. 
-```{r warning=FALSE}
-#boxplot of all bonemeasurements
-p1 <- ggplot(clean_bird_data, aes(x = type, y = huml)) + geom_boxplot() 
-p2 <- ggplot(clean_bird_data, aes(x = type, y = humw)) + geom_boxplot() 
-p3 <- ggplot(clean_bird_data, aes(x = type, y = ulnal)) + geom_boxplot() 
-p4 <- ggplot(clean_bird_data, aes(x = type, y = ulnaw)) + geom_boxplot()
-p5 <- ggplot(clean_bird_data, aes(x = type, y = feml)) + geom_boxplot() 
-p6 <- ggplot(clean_bird_data, aes(x = type, y = femw)) + geom_boxplot() 
-p7 <- ggplot(clean_bird_data, aes(x = type, y = tibl)) + geom_boxplot()
-p8 <- ggplot(clean_bird_data, aes(x = type, y = tibw)) + geom_boxplot() 
-p9 <- ggplot(clean_bird_data, aes(x = type, y = tarl)) + geom_boxplot()
-p10 <- ggplot(clean_bird_data, aes(x = type, y = tarw)) + geom_boxplot()
-grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, 
-             p10, nrow = 3, top = "Bone size per type of bird")
+
+```{r}
+# Create a long format of the data for ggplot2
+long_bird_data <- gather(clean_bird_data, key = "Bone", value = "Measurement",
+                          huml, humw, ulnal, ulnaw, feml, femw, tibl, tibw, tarl, tarw)
+
+# Create a boxplot for each bone measurement
+ggplot(long_bird_data, aes(x = type, y = Measurement)) +
+  geom_boxplot() +
+  facet_wrap(~ Bone, scales = "free_y", nrow = 2) +
+  labs(title = "Bone measurement per type of bird in mm")
 ```
 
 The data seems to have a lot of outliers, to see whether or not this is relevant we can do a log transformation to check the significance. Usually this will not be done 
 
-```{r warning=FALSE}
-#logtransformed boxplot of all bonemeasurements  
-plog1 <- ggplot(clean_bird_data, aes(y = huml,x = type)) + geom_boxplot() + 
-  scale_y_continuous(trans = "log10")
-plog2 <-ggplot(clean_bird_data, aes(y = humw,x = type)) + geom_boxplot() + 
-  scale_y_continuous(trans = "log10")
-plog3 <- ggplot(clean_bird_data, aes(y = ulnal,x = type)) + geom_boxplot() + 
-  scale_y_continuous(trans = "log10")
-plog4 <- ggplot(clean_bird_data, aes(y = ulnaw,x = type)) + geom_boxplot() + 
-  scale_y_continuous(trans = "log10")
-plog5 <- ggplot(clean_bird_data, aes(y = feml,x = type)) + geom_boxplot() + 
-  scale_y_continuous(trans = "log10")
-plog6 <- ggplot(clean_bird_data, aes(y = femw,x = type)) + geom_boxplot() + 
-  scale_y_continuous(trans = "log10")
-plog7 <-ggplot(clean_bird_data, aes(y = tibl,x = type)) + geom_boxplot() + 
-  scale_y_continuous(trans = "log10")
-plog8 <- ggplot(clean_bird_data, aes(y = tibw,x = type)) + geom_boxplot() + 
-  scale_y_continuous(trans = "log10")
-plog9 <- ggplot(clean_bird_data, aes(y = tarl,x = type)) + geom_boxplot() + 
-  scale_y_continuous(trans = "log10")
-plog10 <-ggplot(clean_bird_data, aes(y = tarw,x = type)) + geom_boxplot() + 
-  scale_y_continuous(trans = "log10")
-grid.arrange(plog1, plog2, plog3, plog4, plog5, plog6, plog7, plog8, plog9,
-             plog10, nrow = 3, 
-             top = "Logtransformed bone size per type of bird")
+```{r}
+# Create a boxplot for each bone measurement
+ggplot(long_bird_data, aes(x = type, y = Measurement)) +
+  geom_boxplot() + scale_y_continuous(trans = "log10") +
+  facet_wrap(~ Bone, scales = "free_y", nrow = 2) +
+  labs(title = "Logtransformed bone measurement per type of bird in mm")
+
 ```
 
-Most outliers of the SW group have been removed entirely. There are still plenty of outliers in T group, but since it's the smallest group no instances shall be removed. It is safe to assume that the outliers are actually just bigger and smaller birds. From now on we can assume the outliers are not significant enough to be removed and thus the regular dataset will be used for machine learning. This data can be used for trees, but if these algorithms prove insufficient, logtransformed data may be used for Naive Bayes.
+Most outliers of the SW group have been removed entirely. There are still plenty of outliers in T group, but since it's the smallest group no instances shall be removed. It is safe to assume that the outliers are actually just bigger and smaller birds. From now on we can assume the outliers are not significant enough to be removed and thus the regular dataset will be used for machine learning. This data can be used for trees, but if these algorithms prove insufficient, logtransformed data may be used for Naive Bayes, depending on how well the other algorithms will do.
 
-How can we see if a variable is informative for machine learning? To find out, we will perform an ANOVA on each bone type per bird type and sort the p-values. This will help us determine the most useful values for prediction, even though the distribution it is scewed. (can use t-values as well to order it, highest difference tells us....what?)
+# Class labels 
+How can we see if a variable is informative for machine learning? To find out, we will perform an ANOVA on each bone type per bird type and sort the p-values. This will help us determine the most useful values for prediction, even though the distribution is skewed. This will be valuable information for building algorithms with trees. 
 
 ```{r}
-# Group the data by Species and select numeric columns
+# Create a long format of the data for ggplot2
+long_bird_data <- gather(clean_bird_data, key = "Bone", value = "Measurement",
+                         huml, humw, ulnal, ulnaw, feml, femw, tibl, tibw, tarl, tarw)
 
+# Perform ANOVA for each bone measurement
+anova_results <- long_bird_data %>%
+  group_by(Bone) %>%
+  reframe(p_value = anova(aov(Measurement ~ type))$`Pr(>F)`)
+
+# Sort the p-values to determine informativeness
+anova_results <- na.omit(anova_results)
+sorted_anova_results <- anova_results %>%
+  arrange(p_value)
+
+# View the sorted p-values
+print(sorted_anova_results)
 ```
+The table shows the p-measurments, sorted from low to high. The lowest p-value tells us which measurement will be most informative for machine learning. It seems that huml and ulnaw have the lowest p-values, these will be most informative. Even so, almost all values seem to be reasonably close together. When making our mode, we will remove the lowest variables like tarl and tibl to see if it improves the final results. 
 
-!!!is een variable informatief voor ml? zoek het uit; annova doen op elke bot type PER type vogel. Op p-waarden sorteren. helpful voor trees. Ordenen bij meest en minst verschillende waardes. 
-
+# Multivariate 
 ## Correlation 
 Before checking, the logical assumption would be that the data is highly correlated, since all birds have similar bone structures and the birds within a specific type are going to look even more similar. To be sure, however, we can use a scatterplot to visualize the distribution of the bone sizes and the relationship between them. 
 
@@ -246,8 +244,7 @@ Which then follows that the null hypothesis will be: There is no significant rel
 
 And so the alternative hypothesis: There is a significant relationship between bird bone measurements and their ecological groups, and bone measurements are informative for accurate classification.
 
-# Week 4
-
+# Supervised Machine Learning 
 ## Quality metrics 
 To assess the performance of our algorithm there are a few metrics that are commonly used: 
 - Accuracy/error rate: measures the ratio of correct/incorrect prediction to the total number of predictions, giving us an idea how often the model is correct;
@@ -258,7 +255,7 @@ To assess the performance of our algorithm there are a few metrics that are comm
 - ROC curve: A curve showing models performance across thresholds. Helps visualize trade-off between true positive rate and false positive rate.
 - speed: the speed with which an algorithm can make predictions. 
 
-We will use a confusion matrix to showcase our most important metrics. The one metric that seems specifically useful for unbalanced datasets is F1 score, this will be shown separately. Speed is not a metric that is important for this relatively low amount of data. We are also uninterested in specificity, because true negatives are not a crucial part of knowing what bone measurements are effective for determining species type. 
+We will use a confusion matrix to showcase our most important metrics. The one metric that seems specifically useful for unbalanced datasets is F1 score, this will be shown separately. Speed is not a metric that is important for this relatively low amount of data. 
 
 
 ## Machine learning in weka
@@ -276,44 +273,40 @@ Considering our dataset is highly imbalanced we can already guess that algorithm
 First we will compare all the algorithms with their default values in weka using the clean dataset in the weka experimenter. For settings, we use 10-fold cross validation with 100 repetitions.
 
 ```{r}
+# Load results into R
 weka_default <- read.csv("weka_exp_default.csv", header=T)
 results_default <- aggregate(weka_default$Percent_correct, list(weka_default$Key_Scheme), mean)
 colnames(results_default) <- c("algorithm", "percentage correct")
+# Order the results
+results_default <- results_default %>%
+  arrange(desc(`percentage correct`))
 results_default
 ```
-All the chosen algorithms scored higher than ZeroR and OneR. The most promising results come from the K-Nearest Neighbor (89.16% correct), Simple logistic (85.24% correct) and the Random Forest (84.54% correct) algorithm. The hyper parameters shall be adjusted to see if the accuracy can be heightened. KNN scoring above RandomForest is suspicious, especially since the data is highly correlated. This means KNN might be overfitted on default values, so we shall adjust that by using k = log(number of samples) meaning log(4620) = 3.66 -> k = 4 but because KNN is inherently overfitted we can use a slightly lower threshold, we choose k = 3. As for SimpleLogistic, the optimal number of LogitBoost iterations to perform is cross-validated, which leads to automatic attribute selection. Because of this we shall not adjust the parameters for LogitBoost All other algorithms below 80% will be removed. 
+All the chosen algorithms scored higher than ZeroR and OneR. The most promising results come from the K-Nearest Neighbor (89.16% correct), Simple logistic (85.24% correct) and the Random Forest (84.54% correct) algorithm. The hyper parameters shall be adjusted to see if the accuracy can be heightened. 
 
-Adjustments KNN:
-- set KNN to 3 instead of 1.
-Adjustments SMO:
-- linear regression was used as calibrator. 
-Adjustments RandomForest:
-- set depth to 10.
+KNN scoring above RandomForest is suspicious, especially since the data is highly correlated. This means KNN might be overfitted on default values, so we shall adjust that by using k = log(number of samples) meaning log(4620) = 3.66 -> k = 4 but because KNN is inherently overfitted we can use a slightly lower threshold, we choose k = 3. As for SimpleLogistic, the optimal number of LogitBoost iterations to perform is cross-validated, which leads to automatic attribute selection. Because of this we shall not adjust the parameters for LogitBoost All other algorithms below 80% will be removed. 
+
+- Adjustments KNN: set KNN to 3 instead of 1.
+- Adjustments SimpleLogistic: linear regression was used as calibrator. 
+- Adjustments RandomForest: set depth to 10.
 
 The results are as follows:
-```{r}
-#weka_adjust <- read.csv("weka_exp_adjusted.arff", header=T, comment.char = "@")
-#colnames()
-#results_adjust <- aggregate(weka_adjust$Percent_correct, list(weka_adjust$Key_Scheme), mean)
-#colnames(results_adjust) <- c("algorithm", "percentage correct")
-#results_adjust
-```
 
+```{r}
+tabl_wekka_exp_adjusted <- "
 Dataset                   (1) function | (2) lazy. (3) trees
 ------------------------------------------------------------
-bird_clean               (1000   84.98 |   80.97     84.47  
+bird_clean               (1000   85.24 |   80.97     84.47  
 ------------------------------------------------------------
                                (v/ /*) |   (0/1/0)   (0/1/0)
+"
+cat(tabl_wekka_exp_adjusted)
+```
 
-Key:
-(1) functions.SimpleLogistic '-I 0 -M 500 -H 50 -W 0.0' 7397710626304705059
-(2) lazy.IBk '-K 3 -W 0 -A \"weka.core.neighboursearch.LinearNNSearch -A \\\"weka.core.EuclideanDistance -R first-last\\\"\"' -3080186098777067172
-(3) trees.RandomForest '-P 100 -I 100 -num-slots 1 -K 0 -M 1.0 -V 0.001 -S 1' 1116839470751428698
-
-Using the experimenter we determined that KNN without overfitting decreased in accuracy. Any parameters that are adjusted in the RandomForest. LogitBoost seems to be the perfect best fitting model for our dataset. Next we shall determine the most significant attribute to be used with our model. 
+Using the experimenter we determined that increasing neighbors in KNN decreased accuracy, an indication of overfitting. RandomForest did not seem to increase or decrease in value from increasing the depth of the tree. SimpleLogistic Has not increased or decreased either  seems to be the perfect best fitting model for our dataset with nearly 85% accuracy. 
 
 ## ROC curve 
-To find the ROC curve we load our dataset into weka and go to the explorer, there we can go into the classify menu and use Logistic classifier to visualize the threshold curve. We do this for every attribute. Pictured below are the values for the KNN algorithm:
+To find the ROC curve we load our dataset into weka and go to the explorer, there we can go into the classify menu and use Logistic classifier to visualize the threshold curve. We do this for every attribute. Pictured below are the values for the Simple Logistic:
 
 ```{r curve-side, fig.show="hold", out.width="50%", warning=FALSE, message=FALSE}
 SO_curve <- read.arff("SO_curve.arff")
@@ -322,13 +315,15 @@ W_curve <- read.arff("W_curve.arff")
 R_curve <- read.arff("R_curve.arff")
 SW_curve <- read.arff("SW_curve.arff")
 T_curve <- read.arff("T_curve.arff")
-ggplot(SO_curve, aes(x=`False Positives`, y=`True Positives`)) + geom_line()
-ggplot(P_curve, aes(x=`False Positives`, y=`True Positives`)) + geom_line()
-ggplot(W_curve, aes(x=`False Positives`, y=`True Positives`)) + geom_line()
-ggplot(R_curve, aes(x=`False Positives`, y=`True Positives`)) + geom_line()
-ggplot(SW_curve, aes(x=`False Positives`, y=`True Positives`)) + geom_line()
-ggplot(T_curve, aes(x=`False Positives`, y=`True Positives`)) + geom_line()
+ggplot(SO_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`, colour = Threshold)) + geom_point() + labs(title= "ROC curve of SO")
+ggplot(P_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`, colour = Threshold)) + geom_point() + labs(title= "ROC curve of P")
+ggplot(W_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`, colour = Threshold)) + geom_point() + labs(title= "ROC curve of W")
+ggplot(R_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`, colour = Threshold)) + geom_point() + labs(title= "ROC curve of R")
+ggplot(SW_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`, colour = Threshold)) + geom_point() + labs(title= "ROC curve of SW")
+ggplot(T_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`, colour = Threshold)) + geom_point() + labs(title= "ROC curve of T")
 ```
+!!!!!!!!1interpretatie 
+Next we shall determine the most significant attribute to be used with our model. 
 
 ## Attribute selection
 Loading in the cleaned dataset, we use the weka Explorer to select attributes. We mix and match different search methods with attribute evaluators to find the commonly highest ranking attributes, these will be used in our final model.
@@ -424,7 +419,6 @@ For Wrapper subset evaluate + exhaustive search it seems huml and humw are the h
 
 Overall it seems the length and width of the humerus and ulna are the most significant measurements for accurate classification of bird groups. These bones are located in the wings of the bird. It makes sense that wingspan would determine the group that the bird belongs to. Lagging behind in ranking are the femur and tibiotarsus bones, which are located in the legs of the bird. All variables however, lie above the 40% accuracy. Which is certainly not insignificant. We will experiment with removing multiple variables from our models and see if the final model's accuracy will improve. 
 
-## Model Adjustments 
 Inside the weka explorer we removed individual attributes, being sure to keep our class attribute. We then save all these new datasets as .csv files. In the experimenter we check which mix of attributes and algorithms produce the best result. we run 100 repetitions and use 10-fold crossvalidation. In the comparison field we can check the values. We made multiple datasets with values removed to see which values would affect the accuracy of the dataset. Using the default settings for KNN and RandomForest in the Experimenter. 
 
 Used datasets: 
@@ -438,7 +432,10 @@ Used datasets:
 Used Settings: 
 1. lazy.IBk default 
 2. trees.RandomForest default 
+3. Simple Logistic default 
 
+```{r}
+tabl_algo_comparison <- "
 Dataset                   (1) lazy.IBk | (2) trees
 --------------------------------------------------
 bird_huml                (1000   46.99 |   47.02  
@@ -450,5 +447,29 @@ bird_rm_tarl             (1000   88.08 |   84.23 *
 bird_clean               (1000   89.08 |   84.47 *
 --------------------------------------------------
                                (v/ /*) |   (0/3/4)
-
+"
+cat(tabl_algo_comparison)
+```
 The accuracy decreases the more attributes are removed, therefore no attributes shall be removed.
+
+## Final model 
+The final model shall be a default Simple Logistic algorithm, with no parameters changed and no attributes removed from the dataset. The confusion matrix is shown below;
+
+```{r}
+tabl_conf_matrix <- "
+=== Confusion Matrix ===
+
+   a   b   c   d   e   f   <-- classified as
+ 103   6   1   1   1   4 |   a = SW
+  13  40   2   5   0   4 |   b = W
+   0   0  16   1   5   1 |   c = T
+   1   2   0  41   3   1 |   d = R
+   2   2   2   1  26   5 |   e = P
+   0   1   0   0   1 122 |   f = SO
+"
+cat(tabl_conf_matrix)
+```
+
+!!!interpretatie 
+
+
