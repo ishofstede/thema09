@@ -517,22 +517,22 @@ R_curve <- read.arff("R_curve.arff")
 SW_curve <- read.arff("SW_curve.arff")
 T_curve <- read.arff("T_curve.arff")
 ggplot(SO_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
-                     colour = Threshold)) + geom_point() + 
+                     colour = Threshold)) + geom_line() + 
   labs(title= "ROC curve of SO")
 ggplot(P_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
-                    colour = Threshold)) + geom_point() + 
+                    colour = Threshold)) + geom_line() + 
   labs(title= "ROC curve of P")
 ggplot(W_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
-                    colour = Threshold)) + geom_point() + 
+                    colour = Threshold)) + geom_line() + 
   labs(title= "ROC curve of W")
 ggplot(R_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
-                    colour = Threshold)) + geom_point() + 
+                    colour = Threshold)) + geom_line() + 
   labs(title= "ROC curve of R")
 ggplot(SW_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`,
-                     colour = Threshold)) + geom_point() + 
+                     colour = Threshold)) + geom_line() + 
   labs(title= "ROC curve of SW")
 ggplot(T_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
-                    colour = Threshold)) + geom_point() + 
+                    colour = Threshold)) + geom_line() + 
   labs(title= "ROC curve of T")
 ```
 
@@ -542,7 +542,7 @@ It appears our ROC curve is quite good for the larger groups of birds like SW an
 T_curve_classbalaner <- read.arff("T_curve_classbalancer.arff")
 ggplot(T_curve_classbalaner, aes(x=`False Positive Rate`, 
                                  y=`True Positive Rate`, 
-                                 colour = Threshold)) + geom_point() + 
+                                 colour = Threshold)) + geom_line() + 
   labs(title= "ROC curve of T, using balanced dataset")
 ```
 
@@ -551,3 +551,37 @@ There is a slight change in the angle of the curve. It's false positive rate has
 We can also answer our research question;  Using machine learning algorithms, which bone measurements are most informative for classifying birds into ecological groups?
 We can conclude that there is a significant relationship between bird bone measurements and their ecological groups, and bone measurements are informative for accurate classification. The most informative bones are the humerus and the ulna, these are located in the wing. However, all bone measurements contribute to a better overall classification.
 
+Confusion matrix of RF
+
+```{r}
+tabl_conf_matrix <- "
+=== Confusion Matrix ===
+
+   a   b   c   d   e   f   <-- classified as
+ 100   5   2   4   0   5 |   a = SW
+  17  35   1   3   5   3 |   b = W
+   1   0  15   2   3   2 |   c = T
+   4   0   0  44   0   0 |   d = R
+   0   0   1   2  32   3 |   e = P
+   0   0   0   1   0 123 |   f = SO
+"
+cat(tabl_conf_matrix)
+```
+
+
+Confusion matrix of IBK
+
+```{r}
+tabl_conf_matrix <- "
+=== Confusion Matrix ===
+
+   a   b   c   d   e   f   <-- classified as
+  98   8   2   4   0   4 |   a = SW
+  19  30   1   4   4   6 |   b = W
+   4   0  13   3   1   2 |   c = T
+   2   3   0  41   0   2 |   d = R
+   0   0   2   1  31   4 |   e = P
+   0   0   2   0   0 122 |   f = SO
+"
+cat(tabl_conf_matrix)
+```
