@@ -130,7 +130,13 @@ Firstly, we need to have an overview of our data. Pictured below is a summary of
 bird_data %>% 
   select (huml, humw, ulnal, ulnaw, feml, femw, tibl, tibw, tarl, 
           tarw, type) -> overview
-print(dfSummary(overview, graph.magnif = .75, method = "render"))
+print(dfSummary(overview, graph.magnif = .75, 
+                method = "render", 
+                plain.ascii= FALSE,
+                style = 'grid',
+                varnumbers = FALSE,
+                valid.col = FALSE,
+                graph = FALSE))
 ```
 
 There are 15 missing values. Let's see which birds those values are attached to;
@@ -488,9 +494,97 @@ The accuracy decreases the more attributes are removed this goes for all the mod
 
 # Final model 
 ##ROC curve and confusion matrix
-The final model shall be a default Simple Logistic algorithm, with no parameters changed and no attributes removed from the dataset. We used the clean_bird_data.csv file which contains no NA's but does contain outliers. The confusion matrix is shown below;
+For now it looks like the final model shall be a default Simple Logistic algorithm, with no parameters changed and no attributes removed from the dataset. We used the clean_bird_data.csv file which contains no NA's but does contain outliers. To be sure of it, we shall inspect the ROC curves and confuson matrixes of the top 3 algorithms. The confusion matrixes were obtained via the Weka explorer using the classifier. Default options were used because 10-fold crossvalidation creates an automatic feature selection. We can also display our confusion matrix as an ROC curve to distill the most important quality metrics. To find the ROC curve we load our dataset into weka and go to the explorer, there we can go into the classify menu and use Logistic classifier to visualize the threshold curve. We do this for every attribute. 
 
+Pictured below are the ROC curves for IBK: 
+```{r fig.show="hold", out.width="50%", warning=FALSE, message=FALSE}
+SO_curve_IBK <- read.arff("SO_curve_IBK.arff")
+P_curve_IBK <- read.arff("P_curve_IBK.arff")
+W_curve_IBK <- read.arff("W_curve_IBK.arff")
+R_curve_IBK <- read.arff("R_curve_IBK.arff")
+SW_curve_IBK <- read.arff("SW_curve_IBK.arff")
+T_curve_IBK <- read.arff("T_curve_IBK.arff")
+ggplot(SO_curve_IBK, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
+                     colour = Threshold)) + geom_line() + 
+  labs(title= "ROC curve of SO using IBK")
+ggplot(P_curve_IBK, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
+                    colour = Threshold)) + geom_line() + 
+  labs(title= "ROC curve of P using IBK")
+ggplot(W_curve_IBK, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
+                    colour = Threshold)) + geom_line() + 
+  labs(title= "ROC curve of W using IBK")
+ggplot(R_curve_IBK, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
+                    colour = Threshold)) + geom_line() + 
+  labs(title= "ROC curve of R using IBK")
+ggplot(SW_curve_IBK, aes(x=`False Positive Rate`, y=`True Positive Rate`,
+                     colour = Threshold)) + geom_line() + 
+  labs(title= "ROC curve of SW using IBK")
+ggplot(T_curve_IBK, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
+                    colour = Threshold)) + geom_line() + 
+  labs(title= "ROC curve of T using IBK")
+```
+
+Pictured below are the values for RandomForest:
+```{r fig.show="hold", out.width="50%", warning=FALSE, message=FALSE}
+SO_curve_RF <- read.arff("SO_curve_RF.arff")
+P_curve_RF <- read.arff("P_curve_RF.arff")
+W_curve_RF <- read.arff("W_curve_RF.arff")
+R_curve_RF <- read.arff("R_curve_RF.arff")
+SW_curve_RF <- read.arff("SW_curve_RF.arff")
+T_curve_RF <- read.arff("T_curve_RF.arff")
+ggplot(SO_curve_RF, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
+                     colour = Threshold)) + geom_line() + 
+  labs(title= "ROC curve of SO using RF")
+ggplot(P_curve_RF, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
+                    colour = Threshold)) + geom_line() + 
+  labs(title= "ROC curve of P using RF")
+ggplot(W_curve_RF, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
+                    colour = Threshold)) + geom_line() + 
+  labs(title= "ROC curve of W using RF")
+ggplot(R_curve_RF, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
+                    colour = Threshold)) + geom_line() + 
+  labs(title= "ROC curve of R _  using RF")
+ggplot(SW_curve_RF, aes(x=`False Positive Rate`, y=`True Positive Rate`,
+                     colour = Threshold)) + geom_line() + 
+  labs(title= "ROC curve of SW using RF")
+ggplot(T_curve_RF, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
+                    colour = Threshold)) + geom_line() + 
+  labs(title= "ROC curve of T using RF")
+```
+
+Pictured below are the values for the Simple Logistic:
+```{r fig.show="hold", out.width="50%", warning=FALSE, message=FALSE}
+SO_curve <- read.arff("SO_curve.arff")
+P_curve <- read.arff("P_curve.arff")
+W_curve <- read.arff("W_curve.arff")
+R_curve <- read.arff("R_curve.arff")
+SW_curve <- read.arff("SW_curve.arff")
+T_curve <- read.arff("T_curve.arff")
+ggplot(SO_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
+                     colour = Threshold)) + geom_line() + 
+  labs(title= "ROC curve of SO using SimpleLogistic")
+ggplot(P_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
+                    colour = Threshold)) + geom_line() + 
+  labs(title= "ROC curve of P using SimpleLogistic")
+ggplot(W_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
+                    colour = Threshold)) + geom_line() + 
+  labs(title= "ROC curve of W using SimpleLogistic")
+ggplot(R_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
+                    colour = Threshold)) + geom_line() + 
+  labs(title= "ROC curve of R using SimpleLogistic")
+ggplot(SW_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`,
+                     colour = Threshold)) + geom_line() + 
+  labs(title= "ROC curve of SW using SimpleLogistic")
+ggplot(T_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
+                    colour = Threshold)) + geom_line() + 
+  labs(title= "ROC curve of T")
+```
+
+Now for all the confusion matrixes: 
+
+Pictured below is the CM of SimpleLogsitic:
 ```{r}
+#Confusion matrix of SimpleLogistic
 tabl_conf_matrix <- "
 === Confusion Matrix ===
 
@@ -505,55 +599,11 @@ tabl_conf_matrix <- "
 cat(tabl_conf_matrix)
 ```
 
-This confusion matrix was obtained via the Weka explorer using the classifier. Default options were used because 10-fold crossvalidation creates an automatic feature selection. We can also display our confusion matrix as an ROC curve to distill the most important quality metrics.
+
  
-To find the ROC curve we load our dataset into weka and go to the explorer, there we can go into the classify menu and use Logistic classifier to visualize the threshold curve. We do this for every attribute. Pictured below are the values for the Simple Logistic:
-
-```{r curve-side, fig.show="hold", out.width="50%", warning=FALSE, message=FALSE}
-SO_curve <- read.arff("SO_curve.arff")
-P_curve <- read.arff("P_curve.arff")
-W_curve <- read.arff("W_curve.arff")
-R_curve <- read.arff("R_curve.arff")
-SW_curve <- read.arff("SW_curve.arff")
-T_curve <- read.arff("T_curve.arff")
-ggplot(SO_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
-                     colour = Threshold)) + geom_line() + 
-  labs(title= "ROC curve of SO")
-ggplot(P_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
-                    colour = Threshold)) + geom_line() + 
-  labs(title= "ROC curve of P")
-ggplot(W_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
-                    colour = Threshold)) + geom_line() + 
-  labs(title= "ROC curve of W")
-ggplot(R_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
-                    colour = Threshold)) + geom_line() + 
-  labs(title= "ROC curve of R")
-ggplot(SW_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`,
-                     colour = Threshold)) + geom_line() + 
-  labs(title= "ROC curve of SW")
-ggplot(T_curve, aes(x=`False Positive Rate`, y=`True Positive Rate`, 
-                    colour = Threshold)) + geom_line() + 
-  labs(title= "ROC curve of T")
-```
-
-It appears our ROC curve is quite good for the larger groups of birds like SW and SO, this is because they are over represented in the dataset. The thresholds are also incomplete for certain groups. This can be explained by the low amount of data for T, P and W. Let's apply a classbalancing filter over our clean_bird_dataset to see if anything changed. We will use our type with the lowest instances (T):
-
+Pictured below is the confusion matrix of RF:
 ```{r}
-T_curve_classbalaner <- read.arff("T_curve_classbalancer.arff")
-ggplot(T_curve_classbalaner, aes(x=`False Positive Rate`, 
-                                 y=`True Positive Rate`, 
-                                 colour = Threshold)) + geom_line() + 
-  labs(title= "ROC curve of T, using balanced dataset")
-```
-
-There is a slight change in the angle of the curve. It's false positive rate has decreased and true positive rate has increased. However, the line itself is still interrupted. The threshold doesn't fully go from 0 to 1, instead stopping at 1.0, even though the colors are present in the line itself. We can conclude that there simply isn't enough data to fully and accurately classify the data. However, based on previous research we will still choose SimpleLogistic as best fitting algorithm for this specific classification problem. This is mainly because as it has the overall best F-score, which is most informative for an unbalanced dataset.
-
-We can also answer our research question;  Using machine learning algorithms, which bone measurements are most informative for classifying birds into ecological groups?
-We can conclude that there is a significant relationship between bird bone measurements and their ecological groups, and bone measurements are informative for accurate classification. The most informative bones are the humerus and the ulna, these are located in the wing. However, all bone measurements contribute to a better overall classification.
-
-Confusion matrix of RF
-
-```{r}
+#confusion matrix for RF
 tabl_conf_matrix <- "
 === Confusion Matrix ===
 
@@ -569,9 +619,9 @@ cat(tabl_conf_matrix)
 ```
 
 
-Confusion matrix of IBK
-
+Pictured below is the confusion matrix of IBK:
 ```{r}
+#confusion matrix for KNN
 tabl_conf_matrix <- "
 === Confusion Matrix ===
 
@@ -585,3 +635,22 @@ tabl_conf_matrix <- "
 "
 cat(tabl_conf_matrix)
 ```
+
+It appears our ROC curves are quite good for the larger groups of birds like SW and SO, this is because they are over represented in the dataset. The thresholds are also incomplete for certain groups. This can be explained by the low amount of data for T, P and W. Overall, the RandomForest algorithm and the SimpleLogistic algorithm have good looking ROC curves and confusion matrixes with low false positives and false negatives. Because SimpleLogistic has slightly higher accuracy and F1 score this will be the final algorithm.  
+
+It should be noted however, that the threshold is lower for certain labels. Let's apply a class balancing filter over our clean_bird_dataset to see if anything changed. We will use our type with the lowest instances (T) from our SimpleLogistic algorithm:
+
+```{r}
+T_curve_classbalaner <- read.arff("T_curve_classbalancer.arff")
+ggplot(T_curve_classbalaner, aes(x=`False Positive Rate`, 
+                                 y=`True Positive Rate`, 
+                                 colour = Threshold)) + geom_line() + 
+  labs(title= "ROC curve of T, using balanced dataset")
+```
+
+There is a slight change in the angle of the curve. It's false positive rate has decreased and true positive rate has increased. However, the line itself is still interrupted. The threshold doesn't fully go from 0 to 1, instead stopping at 1.0, even though the colors are present in the line itself. We can conclude that there simply isn't enough data to fully and accurately classify the data. However, based on previous research we will still choose SimpleLogistic as best fitting algorithm for this specific classification problem. This is mainly because as it has the overall quality metrics like F1 score, which is most informative for an unbalanced dataset.
+
+## Conclusion 
+Our final model will be a default SimpleLogistic algorithm, using an unbalanced dataset with no attributes removed. This has proven to be the most reliable algorithm next to RandomForest. However due to better quality metrics like F1 score, the algorithm that comes out on top is SimplpeLogistic. 
+
+We can also answer our research question;  Using machine learning algorithms, which bone measurements are most informative for classifying birds into ecological groups? We can conclude that there is a significant relationship between bird bone measurements and their ecological groups, and bone measurements are informative for accurate classification. The most informative bones are the humerus and the ulna, these are located in the wing. However, all bone measurements contribute to a better overall classification.
