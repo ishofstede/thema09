@@ -1,0 +1,22 @@
+# Created by .ignore support plugin
+## Gradle template
+.gradle
+/build/
+/.idea
+/gradle
+gradlew
+gradlew.bat
+
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# Package Files #
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
