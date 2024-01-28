@@ -1,8 +1,18 @@
-# Default ignored files
-/shelf/
-/workspace.xml
-# Editor-based HTTP Client requests
-/httpRequests/
-# Datasource local storage ignored files
-/dataSources/
-/dataSources.local.xml
+# IntelliJ files
+.idea/
+
+# Gradle project management directories
+.gradle/
+gradle/
+build/
+out/
+
+# Gradle executable files
+gradlew
+gradlew.bat
+
+# Cache of project
+.gradletasknamecache
+
+# Mac generated
+.DS_Store
