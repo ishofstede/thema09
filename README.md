@@ -59,4 +59,4 @@ Then with Tasks > shadow > shadowJar a jar can be created that has all the depen
 
 # contact
 Isabella Hofstede
-ishofstede@st.hanze.nl 
+i.s.hofstede@st.hanze.nl 
