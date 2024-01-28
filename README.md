@@ -44,7 +44,7 @@ Run the following on the commandline:
 java -jar ./build/libs/wrapper-1.0-SNAPSHOT-all.jar -f ./build/resources/main/clean_bird.csv -u ./build/resources/main/unknown.csv
 
 If one of the arguments is missing it gives you the next outcome:
-Parsing failed! As a result of an error: No arff file is provided with unknown instances
+Parsing failed! As a result of an error: No csv file is provided with unknown instances
 
 usage: java -jar .build/libs/wrapper/JavaWrapper-1.0-SNAPSHOT-all.jar [options]
 * -f,--file The input file with the known classes of the instances
